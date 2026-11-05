@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GlassChat - Reddish Glassmorphism P2P Chat</title>
-    <!-- Tailwind CSS with Dark Mode -->
+    <title>GlassChat - Persistent Firebase P2P Glass Chat</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -31,8 +31,6 @@
     </script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PeerJS WebRTC Library -->
-    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     <!-- Tone.js for Web Audio API Sound Effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <!-- Google Fonts Imports -->
@@ -135,9 +133,8 @@
     <div class="glass-orb-1"></div>
     <div class="glass-orb-2"></div>
 
-    <!-- Application Top Navigation Header -->
+    <!-- Header Navigation -->
     <header class="w-full max-w-2xl glass-panel rounded-2xl p-3 sm:p-4 mb-4 flex flex-wrap items-center justify-between gap-3 transition-all duration-300">
-        <!-- Logo / Title -->
         <div class="flex items-center space-x-3">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-rose-500 flex items-center justify-center text-white shadow-md shadow-brand-600/40">
                 <i class="fa-solid fa-comments text-lg"></i>
@@ -146,11 +143,10 @@
                 <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-brand-700 via-rose-600 to-brand-500 bg-clip-text text-transparent dark:from-rose-400 dark:to-rose-200">
                     GlassChat
                 </h1>
-                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Serverless P2P Red Glass</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Persistent Firebase Sync</p>
             </div>
         </div>
 
-        <!-- Controls: Font Dropdown + Audio Toggle + Dark Mode Toggle -->
         <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
             <!-- Google Font Selector -->
             <div class="relative flex items-center">
@@ -162,25 +158,25 @@
                     <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
                     <option value="'Playfair Display', serif">Playfair Serif</option>
                     <option value="'Fira Code', monospace">Fira Code</option>
-                    <option value="'Caveat', cursive">Caveat Handwriting</option>
+                    <option value="'Caveat', cursive">Caveat</option>
                 </select>
                 <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-2.5 pointer-events-none"></i>
             </div>
 
-            <!-- Sound Effects Toggle -->
+            <!-- Sound Toggle -->
             <button id="soundToggleBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 text-slate-700 dark:text-slate-200 hover:text-brand-600 flex items-center justify-center transition" title="Toggle Sound FX">
                 <i id="soundIcon" class="fa-solid fa-volume-high text-xs text-rose-500"></i>
             </button>
 
-            <!-- Light / Dark Mode Toggle -->
+            <!-- Theme Toggle -->
             <button id="themeToggleBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 text-slate-700 dark:text-slate-200 hover:text-brand-600 flex items-center justify-center transition" title="Toggle Light/Dark Theme">
                 <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
             </button>
 
-            <!-- Status Badge -->
+            <!-- Connection Status -->
             <div id="statusBadge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-100/80 dark:bg-slate-900/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
                 <span class="w-2 h-2 rounded-full bg-slate-400"></span>
-                <span id="statusText">Ready</span>
+                <span id="statusText">Initializing...</span>
             </div>
         </div>
     </header>
@@ -188,30 +184,29 @@
     <!-- Main Container -->
     <main class="w-full max-w-2xl my-auto flex-1 flex flex-col justify-center">
         
-        <!-- SECTION 1: Lobby View (Create or Join Room) -->
+        <!-- SECTION 1: Lobby View -->
         <div id="lobbySection" class="glass-panel rounded-3xl p-6 sm:p-8 text-center transition-all duration-300">
             <div class="w-20 h-20 bg-gradient-to-tr from-rose-500 to-brand-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand-600/30 ring-4 ring-rose-400/20">
                 <i class="fa-solid fa-paper-plane text-3xl"></i>
             </div>
             
-            <h2 class="text-2xl font-bold mb-2 tracking-tight">Zero-Account Peer Chat</h2>
+            <h2 class="text-2xl font-bold mb-2 tracking-tight">Persistent Cloud P2P Chat</h2>
             <p class="text-slate-600 dark:text-slate-300 text-xs sm:text-sm mb-6 max-w-md mx-auto leading-relaxed">
-                Direct peer-to-peer encrypted data messaging using WebRTC. Create a room or paste a call ID to start instantly.
+                Messages remain saved and synced live even if tabs are closed or opened later.
             </p>
 
             <button id="startChatBtn" class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-600 via-rose-600 to-brand-700 hover:from-brand-700 hover:to-rose-800 text-white font-semibold rounded-2xl shadow-lg shadow-brand-600/30 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center space-x-2">
                 <i class="fa-solid fa-plus text-sm"></i>
-                <span>Create New Chat Room</span>
+                <span>Create Persistent Chat Room</span>
             </button>
 
-            <!-- Join Call manually separator -->
             <div class="relative my-6 flex items-center justify-center">
                 <div class="border-t border-rose-200 dark:border-rose-900/40 w-full"></div>
                 <span class="bg-rose-50/90 dark:bg-slate-900/90 px-3 text-[10px] text-rose-500 uppercase tracking-widest absolute font-semibold">OR JOIN ROOM</span>
             </div>
 
             <div class="flex flex-col sm:flex-row gap-2">
-                <input id="roomInput" type="text" placeholder="Enter Room / Peer ID" class="flex-1 bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 transition">
+                <input id="roomInput" type="text" placeholder="Enter Room ID" class="flex-1 bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 transition">
                 <button id="joinChatBtn" class="bg-slate-900 hover:bg-slate-800 dark:bg-rose-950 dark:hover:bg-rose-900 dark:border dark:border-rose-800 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition shadow-md">
                     Join Room
                 </button>
@@ -221,18 +216,16 @@
         <!-- SECTION 2: Active Glassmorphism Chat Interface -->
         <div id="chatSection" class="hidden glass-panel rounded-3xl p-4 sm:p-5 flex flex-col h-[75vh] max-h-[680px] transition-all duration-300">
             
-            <!-- Room Top Header Bar -->
+            <!-- Room Top Bar -->
             <div class="flex items-center justify-between pb-3 mb-3 border-b border-rose-200/60 dark:border-rose-900/50">
-                <!-- Room Link Info -->
                 <div class="flex items-center space-x-2 min-w-0 flex-1 pr-2">
                     <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                     <div class="truncate">
-                        <p class="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 tracking-wider">Shareable Room Link</p>
-                        <p id="shareUrlDisplay" class="text-xs text-slate-600 dark:text-slate-300 font-mono truncate">Generating link...</p>
+                        <p class="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 tracking-wider">Persistent Room Link</p>
+                        <p id="shareUrlDisplay" class="text-xs text-slate-600 dark:text-slate-300 font-mono truncate">Loading room...</p>
                     </div>
                 </div>
 
-                <!-- Header Actions -->
                 <div class="flex items-center space-x-1.5 shrink-0">
                     <button id="copyBtn" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-950/80 hover:bg-rose-200 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition flex items-center space-x-1">
                         <i class="fa-regular fa-copy"></i>
@@ -241,7 +234,7 @@
                     <button id="clearChatBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-500 dark:text-slate-400 hover:text-rose-600 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center transition" title="Clear Chat History">
                         <i class="fa-solid fa-trash-can text-xs"></i>
                     </button>
-                    <button id="endChatBtn" class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition shadow-md shadow-rose-600/30" title="Leave Chat">
+                    <button id="endChatBtn" class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition shadow-md shadow-rose-600/30" title="Leave Room">
                         <i class="fa-solid fa-right-from-bracket text-xs"></i>
                     </button>
                 </div>
@@ -249,17 +242,16 @@
 
             <!-- Messages Stream -->
             <div id="messagesContainer" class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-3 py-2">
-                <!-- Welcome Hint Message -->
                 <div class="text-center my-4">
                     <span class="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-rose-100/70 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/40">
-                        🔒 End-to-end peer-to-peer channel established
+                        ☁️ Cloud sync active • Messages persist when tabs close
                     </span>
                 </div>
             </div>
 
-            <!-- Peer Typing Indicator -->
+            <!-- Typing Indicator -->
             <div id="typingIndicator" class="h-6 flex items-center space-x-2 px-2 text-xs text-slate-500 dark:text-slate-400 invisible transition-all">
-                <span class="font-medium text-rose-600 dark:text-rose-400">Peer is typing</span>
+                <span class="font-medium text-rose-600 dark:text-rose-400">Someone is typing</span>
                 <div class="flex space-x-1">
                     <div class="w-1.5 h-1.5 bg-rose-500 rounded-full typing-dot"></div>
                     <div class="w-1.5 h-1.5 bg-rose-500 rounded-full typing-dot"></div>
@@ -267,7 +259,7 @@
                 </div>
             </div>
 
-            <!-- Message Input Area -->
+            <!-- Input Box -->
             <form id="chatForm" class="mt-1 flex items-center space-x-2">
                 <div class="relative flex-1">
                     <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" class="w-full bg-white/80 dark:bg-slate-900/80 border border-rose-200 dark:border-rose-900/80 rounded-2xl pl-4 pr-10 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 transition shadow-inner">
@@ -283,28 +275,94 @@
 
     </main>
 
-    <!-- Toast Notification Banner -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white border border-rose-500/30 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-medium flex items-center space-x-2 opacity-0 pointer-events-none transition-opacity duration-300 z-50 backdrop-blur-md">
         <i id="toastIcon" class="fa-solid fa-circle-check text-rose-400"></i>
         <span id="toastMsg">Link copied to clipboard!</span>
     </div>
 
-    <!-- Footer -->
-    <footer class="text-[11px] text-slate-500 dark:text-slate-400 text-center py-2 font-medium">
-        GlassChat • WebRTC Data Channel Engine
-    </footer>
+    <!-- Firebase Modular Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    <!-- Application Script -->
-    <script>
-        // --- Theme & Font Settings ---
+        // Global Firebase Configuration & Global Fallbacks
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            apiKey: "AIzaSyDemoKeyOnlyForAppFallback000000",
+            authDomain: "demo-app.firebaseapp.com",
+            projectId: "demo-app",
+            storageBucket: "demo-app.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'glasschat-app';
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let currentUser = null;
+        let currentRoomId = null;
+        let unsubscribeMessages = null;
+        let unsubscribeTyping = null;
+        let typingTimeout = null;
+
+        // Sound Settings
+        let soundEnabled = true;
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high text-xs text-rose-500' : 'fa-solid fa-volume-xmark text-xs text-slate-400';
+            showToast(soundEnabled ? "Sound enabled" : "Sound muted", "fa-solid fa-volume-high text-rose-400");
+        });
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (Tone.context.state !== 'running') Tone.start();
+                const synth = new Tone.Synth({
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                
+                if (type === 'sent') synth.triggerAttackRelease("C6", "16n");
+                else if (type === 'received') synth.triggerAttackRelease("G5", "16n", "+0.05");
+            } catch (e) {
+                console.log("Audio play suppressed:", e);
+            }
+        }
+
+        // DOM References
+        const lobbySection = document.getElementById('lobbySection');
+        const chatSection = document.getElementById('chatSection');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const joinChatBtn = document.getElementById('joinChatBtn');
+        const roomInput = document.getElementById('roomInput');
+        const shareUrlDisplay = document.getElementById('shareUrlDisplay');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyBtnText = document.getElementById('copyBtnText');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        const endChatBtn = document.getElementById('endChatBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const chatForm = document.getElementById('chatForm');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        const emojiQuickBtn = document.getElementById('emojiQuickBtn');
+
+        // Theme & Font Settings
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const themeIcon = document.getElementById('themeIcon');
         const fontSelector = document.getElementById('fontSelector');
         const html = document.documentElement;
 
-        // Initialize saved preferences
         function initSettings() {
-            // Theme
             const savedTheme = localStorage.getItem('glasschat_theme');
             if (savedTheme === 'dark') {
                 html.classList.add('dark');
@@ -316,7 +374,6 @@
                 themeIcon.className = 'fa-solid fa-moon text-xs text-slate-600';
             }
 
-            // Font
             const savedFont = localStorage.getItem('glasschat_font');
             if (savedFont) {
                 fontSelector.value = savedFont;
@@ -346,70 +403,7 @@
 
         initSettings();
 
-        // --- Sound Effects using Tone.js ---
-        let soundEnabled = true;
-        const soundToggleBtn = document.getElementById('soundToggleBtn');
-        const soundIcon = document.getElementById('soundIcon');
-
-        soundToggleBtn.addEventListener('click', () => {
-            soundEnabled = !soundEnabled;
-            soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high text-xs text-rose-500' : 'fa-solid fa-volume-xmark text-xs text-slate-400';
-            showToast(soundEnabled ? "Sound enabled" : "Sound muted", "fa-solid fa-volume-high text-rose-400");
-        });
-
-        function playSound(type) {
-            if (!soundEnabled) return;
-            try {
-                if (Tone.context.state !== 'running') {
-                    Tone.start();
-                }
-                const synth = new Tone.Synth({
-                    oscillator: { type: "sine" },
-                    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
-                }).toDestination();
-                
-                if (type === 'sent') {
-                    synth.triggerAttackRelease("C6", "16n");
-                } else if (type === 'received') {
-                    synth.triggerAttackRelease("G5", "16n", "+0.05");
-                }
-            } catch (e) {
-                console.log("Audio play suppressed:", e);
-            }
-        }
-
-        // --- WebRTC PeerJS State ---
-        let peer = null;
-        let dataConnection = null;
-        let typingTimeout = null;
-
-        // DOM Elements
-        const lobbySection = document.getElementById('lobbySection');
-        const chatSection = document.getElementById('chatSection');
-        const startChatBtn = document.getElementById('startChatBtn');
-        const joinChatBtn = document.getElementById('joinChatBtn');
-        const roomInput = document.getElementById('roomInput');
-        const shareUrlDisplay = document.getElementById('shareUrlDisplay');
-        const copyBtn = document.getElementById('copyBtn');
-        const copyBtnText = document.getElementById('copyBtnText');
-        const clearChatBtn = document.getElementById('clearChatBtn');
-        const endChatBtn = document.getElementById('endChatBtn');
-        const statusBadge = document.getElementById('statusBadge');
-        const statusText = document.getElementById('statusText');
-        const messagesContainer = document.getElementById('messagesContainer');
-        const messageInput = document.getElementById('messageInput');
-        const chatForm = document.getElementById('chatForm');
-        const typingIndicator = document.getElementById('typingIndicator');
-        const toast = document.getElementById('toast');
-        const toastMsg = document.getElementById('toastMsg');
-        const emojiQuickBtn = document.getElementById('emojiQuickBtn');
-
-        // Helper: Generate Room ID
-        function generateRoomId() {
-            return 'chat-' + Math.random().toString(36).substring(2, 8);
-        }
-
-        // Helper: Toast Message
+        // Status Helpers
         function showToast(message, iconClass = "fa-solid fa-circle-check text-rose-400") {
             toastMsg.innerText = message;
             document.getElementById('toastIcon').className = iconClass;
@@ -419,7 +413,6 @@
             }, 2500);
         }
 
-        // Helper: Status Indicator
         function setStatus(text, type = 'neutral') {
             statusText.innerText = text;
             const dot = statusBadge.querySelector('span');
@@ -436,9 +429,28 @@
             }
         }
 
-        // --- Render Message Bubble ---
-        function appendMessage(text, isSent = false, timestamp = null) {
-            const timeStr = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        // Authenticate User Anonymously
+        async function authenticate() {
+            try {
+                const cred = await signInAnonymously(auth);
+                currentUser = cred.user;
+                setStatus("Ready", "connected");
+
+                // Auto-join room from URL parameter if present
+                const urlParams = new URLSearchParams(window.location.search);
+                const roomParam = urlParams.get('room');
+                if (roomParam) {
+                    joinRoom(roomParam);
+                }
+            } catch (err) {
+                console.error("Auth Error:", err);
+                setStatus("Offline", "neutral");
+            }
+        }
+
+        // Render Single Message Bubble
+        function appendMessage(text, senderUid, timestampStr) {
+            const isSent = currentUser && senderUid === currentUser.uid;
             
             const msgWrapper = document.createElement('div');
             msgWrapper.className = `flex flex-col ${isSent ? 'items-end' : 'items-start'} my-1`;
@@ -454,154 +466,141 @@
 
             const timeSpan = document.createElement('span');
             timeSpan.className = "text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1 font-mono";
-            timeSpan.innerText = timeStr;
+            timeSpan.innerText = timestampStr || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             msgWrapper.appendChild(bubble);
             msgWrapper.appendChild(timeSpan);
             messagesContainer.appendChild(msgWrapper);
 
-            // Auto-scroll to bottom
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // --- Peer Connection Handlers ---
-        function setupDataConnection(conn) {
-            dataConnection = conn;
+        // Join/Subscribe to Firebase Room
+        function joinRoom(roomId) {
+            if (!currentUser) return;
 
-            dataConnection.on('open', () => {
-                setStatus("Connected", "connected");
-                showToast("Peer connected!", "fa-solid fa-link text-emerald-400");
+            currentRoomId = roomId;
+            const shareableUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
+            shareUrlDisplay.innerText = shareableUrl;
+
+            lobbySection.classList.add('hidden');
+            chatSection.classList.remove('hidden');
+            setStatus("Live Synced", "connected");
+
+            // Clear previous listeners
+            if (unsubscribeMessages) unsubscribeMessages();
+            if (unsubscribeTyping) unsubscribeTyping();
+
+            // Firestore Path complying with MANDATORY RULE 1
+            const messagesCollection = collection(db, 'artifacts', appId, 'public', 'data', `room_${roomId}_messages`);
+
+            // Listen for Messages
+            unsubscribeMessages = onSnapshot(messagesCollection, (snapshot) => {
+                // Clear and rebuild messages sorted by timestamp
+                messagesContainer.innerHTML = `
+                    <div class="text-center my-4">
+                        <span class="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-rose-100/70 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/40">
+                            ☁️ Live Persistent Storage Active
+                        </span>
+                    </div>`;
+
+                const docs = snapshot.docs.map(doc => doc.data());
+                // In-memory sorting (MANDATORY RULE 2)
+                docs.sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+
+                let lastDoc = null;
+                docs.forEach(data => {
+                    const timeStr = data.createdAt ? new Date(data.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+                    appendMessage(data.text, data.senderUid, timeStr);
+                    lastDoc = data;
+                });
+
+                if (lastDoc && lastDoc.senderUid !== currentUser.uid) {
+                    playSound('received');
+                }
+            }, (error) => {
+                console.error("Firestore Listener Error:", error);
             });
 
-            dataConnection.on('data', (data) => {
-                if (typeof data === 'object') {
-                    if (data.type === 'chat') {
+            // Listen for Typing Status
+            const typingDocRef = doc(db, 'artifacts', appId, 'public', 'data', `room_${roomId}_typing`, 'status');
+            unsubscribeTyping = onSnapshot(typingDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.isTyping && data.userUid !== currentUser.uid) {
+                        typingIndicator.classList.remove('invisible');
+                    } else {
                         typingIndicator.classList.add('invisible');
-                        appendMessage(data.text, false, data.time);
-                        playSound('received');
-                    } else if (data.type === 'typing') {
-                        if (data.isTyping) {
-                            typingIndicator.classList.remove('invisible');
-                        } else {
-                            typingIndicator.classList.add('invisible');
-                        }
                     }
                 }
-            });
-
-            dataConnection.on('close', () => {
-                setStatus("Peer Left", "neutral");
-                showToast("Peer disconnected", "fa-solid fa-circle-exclamation text-amber-400");
-            });
+            }, (err) => console.log(err));
         }
 
-        // --- Start Room (Host) ---
-        function initHostRoom() {
-            const roomId = generateRoomId();
-            const shareableUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-            
-            lobbySection.classList.add('hidden');
-            chatSection.classList.remove('hidden');
-            shareUrlDisplay.innerText = shareableUrl;
-            setStatus("Waiting for peer...", "waiting");
+        // Send Message
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text || !currentRoomId || !currentUser) return;
 
-            peer = new Peer(roomId);
+            messageInput.value = '';
 
-            peer.on('open', (id) => {
-                console.log("Peer Host Ready ID:", id);
-            });
+            try {
+                const messagesCollection = collection(db, 'artifacts', appId, 'public', 'data', `room_${currentRoomId}_messages`);
+                await addDoc(messagesCollection, {
+                    text: text,
+                    senderUid: currentUser.uid,
+                    createdAt: Date.now()
+                });
 
-            peer.on('connection', (conn) => {
-                setupDataConnection(conn);
-            });
+                playSound('sent');
 
-            peer.on('error', (err) => {
-                console.error("Peer error:", err);
-                showToast("Connection failed", "fa-solid fa-circle-xmark text-rose-500");
-            });
-        }
+                // Clear typing status
+                const typingDocRef = doc(db, 'artifacts', appId, 'public', 'data', `room_${currentRoomId}_typing`, 'status');
+                await setDoc(typingDocRef, { isTyping: false, userUid: currentUser.uid });
 
-        // --- Join Room (Guest) ---
-        function initGuestRoom(targetRoomId) {
-            lobbySection.classList.add('hidden');
-            chatSection.classList.remove('hidden');
-            
-            const shareableUrl = `${window.location.origin}${window.location.pathname}?room=${targetRoomId}`;
-            shareUrlDisplay.innerText = shareableUrl;
-            setStatus("Connecting...", "waiting");
+            } catch (err) {
+                console.error("Error sending message:", err);
+                showToast("Failed to send message", "fa-solid fa-circle-xmark text-rose-500");
+            }
+        });
 
-            peer = new Peer();
+        // Typing Status Update
+        messageInput.addEventListener('input', async () => {
+            if (!currentRoomId || !currentUser) return;
 
-            peer.on('open', () => {
-                const conn = peer.connect(targetRoomId);
-                setupDataConnection(conn);
-            });
+            try {
+                const typingDocRef = doc(db, 'artifacts', appId, 'public', 'data', `room_${currentRoomId}_typing`, 'status');
+                await setDoc(typingDocRef, { isTyping: true, userUid: currentUser.uid });
 
-            peer.on('error', (err) => {
-                console.error("Peer connection error:", err);
-                showToast("Could not connect to peer room", "fa-solid fa-circle-xmark text-rose-500");
-            });
-        }
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(async () => {
+                    await setDoc(typingDocRef, { isTyping: false, userUid: currentUser.uid });
+                }, 2000);
+            } catch (err) {
+                console.log("Typing update err:", err);
+            }
+        });
 
-        // --- User Actions ---
-        startChatBtn.addEventListener('click', initHostRoom);
+        // Actions
+        startChatBtn.addEventListener('click', () => {
+            const newRoomId = 'room-' + Math.random().toString(36).substring(2, 8);
+            window.history.pushState({}, document.title, `${window.location.pathname}?room=${newRoomId}`);
+            joinRoom(newRoomId);
+        });
 
         joinChatBtn.addEventListener('click', () => {
             const roomId = roomInput.value.trim();
             if (roomId) {
-                initGuestRoom(roomId);
+                window.history.pushState({}, document.title, `${window.location.pathname}?room=${roomId}`);
+                joinRoom(roomId);
             } else {
                 showToast("Please enter a valid Room ID", "fa-solid fa-circle-exclamation text-amber-400");
             }
         });
 
-        // Send Message
-        chatForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const text = messageInput.value.trim();
-            if (!text) return;
-
-            if (!dataConnection || !dataConnection.open) {
-                showToast("Waiting for a peer to join...", "fa-solid fa-clock text-amber-400");
-                return;
-            }
-
-            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            dataConnection.send({ type: 'chat', text: text, time: timeStr });
-
-            appendMessage(text, true, timeStr);
-            playSound('sent');
-            messageInput.value = '';
-
-            // Stop typing status
-            dataConnection.send({ type: 'typing', isTyping: false });
-        });
-
-        // Typing Notification Broadcast
-        messageInput.addEventListener('input', () => {
-            if (dataConnection && dataConnection.open) {
-                dataConnection.send({ type: 'typing', isTyping: true });
-
-                clearTimeout(typingTimeout);
-                typingTimeout = setTimeout(() => {
-                    dataConnection.send({ type: 'typing', isTyping: false });
-                }, 1500);
-            }
-        });
-
-        // Quick Emojis
-        const emojis = ['😊', '😂', '🔥', '❤️', '👍', '🎉', '🚀'];
-        let emojiIdx = 0;
-        emojiQuickBtn.addEventListener('click', () => {
-            messageInput.value += emojis[emojiIdx];
-            emojiIdx = (emojiIdx + 1) % emojis.length;
-            messageInput.focus();
-        });
-
-        // Copy Link
         copyBtn.addEventListener('click', () => {
             const shareUrl = shareUrlDisplay.innerText;
-            if (shareUrl && shareUrl !== "Generating link...") {
+            if (shareUrl && shareUrl !== "Loading room...") {
                 const dummy = document.createElement("textarea");
                 document.body.appendChild(dummy);
                 dummy.value = shareUrl;
@@ -615,37 +614,43 @@
             }
         });
 
-        // Clear Chat History
-        clearChatBtn.addEventListener('click', () => {
-            messagesContainer.innerHTML = `
-                <div class="text-center my-4">
-                    <span class="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-rose-100/70 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/40">
-                        Chat history cleared
-                    </span>
-                </div>`;
-            showToast("Chat cleared");
+        clearChatBtn.addEventListener('click', async () => {
+            if (!currentRoomId || !currentUser) return;
+            try {
+                const messagesCollection = collection(db, 'artifacts', appId, 'public', 'data', `room_${currentRoomId}_messages`);
+                const snapshot = await getDocs(messagesCollection);
+                snapshot.forEach(async (docSnap) => {
+                    await deleteDoc(docSnap.ref);
+                });
+                showToast("Chat cleared from cloud");
+            } catch (err) {
+                console.error("Clear error:", err);
+            }
         });
 
-        // End / Leave Chat
         endChatBtn.addEventListener('click', () => {
-            if (dataConnection) dataConnection.close();
-            if (peer) peer.destroy();
+            if (unsubscribeMessages) unsubscribeMessages();
+            if (unsubscribeTyping) unsubscribeTyping();
+            currentRoomId = null;
 
             window.history.pushState({}, document.title, window.location.pathname);
             chatSection.classList.add('hidden');
             lobbySection.classList.remove('hidden');
-            setStatus("Disconnected", "neutral");
+            setStatus("Ready", "connected");
             showToast("Left room");
         });
 
-        // Check for URL Parameter `?room=xyz` on load
-        window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const roomParam = urlParams.get('room');
-            if (roomParam) {
-                initGuestRoom(roomParam);
-            }
+        // Quick Emojis
+        const emojis = ['😊', '😂', '🔥', '❤️', '👍', '🎉', '🚀'];
+        let emojiIdx = 0;
+        emojiQuickBtn.addEventListener('click', () => {
+            messageInput.value += emojis[emojiIdx];
+            emojiIdx = (emojiIdx + 1) % emojis.length;
+            messageInput.focus();
         });
+
+        // Initialize Firebase Auth
+        authenticate();
     </script>
 </body>
 </html>
