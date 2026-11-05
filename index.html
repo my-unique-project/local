@@ -3,192 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VoiceConnect - Instant Audio Calling</title>
-    <!-- Tailwind CSS with Dark Mode Config -->
+    <title>GlassChat - Reddish Glassmorphism P2P Chat</title>
+    <!-- Tailwind CSS with Dark Mode -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#fff1f2',
+                            100: '#ffe4e6',
+                            200: '#fecdd3',
+                            300: '#fda4af',
+                            400: '#fb7185',
+                            500: '#f43f5e',
+                            600: '#e11d48',
+                            700: '#be123c',
+                            800: '#9f1239',
+                            900: '#881337',
+                        }
+                    }
+                }
+            }
         }
     </script>
     <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- PeerJS Library for WebRTC Signalling -->
+    <!-- PeerJS WebRTC Library -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tone.js for Web Audio API Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts Imports -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link id="googleFontsLink" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,600;1,400&family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            transition: background-color 0.3s ease, color 0.3s ease;
+            transition: background-color 0.4s ease, color 0.4s ease;
         }
-        /* Custom Wave Visualizer Animations */
-        @keyframes pulse-wave {
-            0%, 100% { height: 12px; }
-            50% { height: 48px; }
-        }
-        .wave-bar {
-            animation: pulse-wave 1.2s infinite ease-in-out;
-        }
-        .wave-bar:nth-child(1) { animation-delay: 0.0s; }
-        .wave-bar:nth-child(2) { animation-delay: 0.15s; }
-        .wave-bar:nth-child(3) { animation-delay: 0.3s; }
-        .wave-bar:nth-child(4) { animation-delay: 0.45s; }
-        .wave-bar:nth-child(5) { animation-delay: 0.6s; }
 
-        .wave-paused .wave-bar {
-            animation-play-state: paused !important;
-            height: 12px !important;
+        /* Ambient Dynamic Background Orbs for Glass Reflection */
+        .glass-orb-1 {
+            position: fixed;
+            top: -10%;
+            left: -10%;
+            width: 45vw;
+            height: 45vw;
+            max-width: 500px;
+            max-height: 500px;
+            background: radial-gradient(circle, rgba(244, 63, 94, 0.45) 0%, rgba(225, 29, 72, 0.1) 70%, transparent 100%);
+            filter: blur(70px);
+            z-index: -1;
+            pointer-events: none;
+            animation: floatOrb 12s infinite alternate ease-in-out;
+        }
+
+        .glass-orb-2 {
+            position: fixed;
+            bottom: -10%;
+            right: -10%;
+            width: 50vw;
+            height: 50vw;
+            max-width: 550px;
+            max-height: 550px;
+            background: radial-gradient(circle, rgba(190, 18, 60, 0.35) 0%, rgba(251, 113, 133, 0.15) 70%, transparent 100%);
+            filter: blur(80px);
+            z-index: -1;
+            pointer-events: none;
+            animation: floatOrb 15s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes floatOrb {
+            0% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(40px, -30px) scale(1.08); }
+            100% { transform: translate(-20px, 40px) scale(0.95); }
+        }
+
+        /* Custom Scrollbar for Chat Messages */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(225, 29, 72, 0.25);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(225, 29, 72, 0.45);
+        }
+
+        /* Glassmorphism Surface Base Styles */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            box-shadow: 0 20px 40px -15px rgba(225, 29, 72, 0.12), 0 0 15px rgba(244, 63, 94, 0.05);
+        }
+
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(225, 29, 72, 0.3);
+            box-shadow: 0 20px 50px -15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(225, 29, 72, 0.15);
+        }
+
+        /* Typing Dots Animation */
+        .typing-dot {
+            animation: typingBounce 1.4s infinite ease-in-out both;
+        }
+        .typing-dot:nth-child(1) { animation-delay: 0s; }
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typingBounce {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+            40% { transform: scale(1.1); opacity: 1; }
         }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-between items-center p-4 sm:p-6">
+<body class="bg-rose-50/60 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col justify-between items-center p-3 sm:p-6 overflow-x-hidden">
 
-    <!-- Header Section -->
-    <header class="w-full max-w-md flex justify-between items-center py-4 border-b border-slate-200 dark:border-slate-800">
+    <!-- Ambient Glowing Orbs -->
+    <div class="glass-orb-1"></div>
+    <div class="glass-orb-2"></div>
+
+    <!-- Application Top Navigation Header -->
+    <header class="w-full max-w-2xl glass-panel rounded-2xl p-3 sm:p-4 mb-4 flex flex-wrap items-center justify-between gap-3 transition-all duration-300">
+        <!-- Logo / Title -->
         <div class="flex items-center space-x-3">
-            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                <i class="fa-solid fa-phone-volume text-xl"></i>
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-700 to-rose-500 flex items-center justify-center text-white shadow-md shadow-brand-600/40">
+                <i class="fa-solid fa-comments text-lg"></i>
             </div>
             <div>
-                <h1 class="text-xl font-bold tracking-tight">VoiceConnect</h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400">Instant Peer-to-Peer Voice Calls</p>
+                <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-brand-700 via-rose-600 to-brand-500 bg-clip-text text-transparent dark:from-rose-400 dark:to-rose-200">
+                    GlassChat
+                </h1>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">Serverless P2P Red Glass</p>
             </div>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <!-- Theme Toggle Button -->
-            <button id="themeToggleBtn" class="w-9 h-9 rounded-xl bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center transition-all duration-200" title="Toggle Light/Dark Theme">
-                <i id="themeIcon" class="fa-solid fa-moon text-base"></i>
+        <!-- Controls: Font Dropdown + Audio Toggle + Dark Mode Toggle -->
+        <div class="flex items-center space-x-2 sm:space-x-3 ml-auto">
+            <!-- Google Font Selector -->
+            <div class="relative flex items-center">
+                <i class="fa-solid fa-font text-xs text-rose-500 absolute left-2.5 pointer-events-none"></i>
+                <select id="fontSelector" class="pl-7 pr-7 py-1.5 bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 text-slate-700 dark:text-slate-200 text-xs rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500 transition cursor-pointer appearance-none">
+                    <option value="'Inter', sans-serif">Inter</option>
+                    <option value="'Poppins', sans-serif">Poppins</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Space Grotesk', sans-serif">Space Grotesk</option>
+                    <option value="'Playfair Display', serif">Playfair Serif</option>
+                    <option value="'Fira Code', monospace">Fira Code</option>
+                    <option value="'Caveat', cursive">Caveat Handwriting</option>
+                </select>
+                <i class="fa-solid fa-chevron-down text-[10px] text-slate-400 absolute right-2.5 pointer-events-none"></i>
+            </div>
+
+            <!-- Sound Effects Toggle -->
+            <button id="soundToggleBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 text-slate-700 dark:text-slate-200 hover:text-brand-600 flex items-center justify-center transition" title="Toggle Sound FX">
+                <i id="soundIcon" class="fa-solid fa-volume-high text-xs text-rose-500"></i>
+            </button>
+
+            <!-- Light / Dark Mode Toggle -->
+            <button id="themeToggleBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 text-slate-700 dark:text-slate-200 hover:text-brand-600 flex items-center justify-center transition" title="Toggle Light/Dark Theme">
+                <i id="themeIcon" class="fa-solid fa-moon text-xs"></i>
             </button>
 
             <!-- Status Badge -->
-            <div id="statusBadge" class="flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700">
-                <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+            <div id="statusBadge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-100/80 dark:bg-slate-900/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
                 <span id="statusText">Ready</span>
             </div>
         </div>
     </header>
 
-    <!-- Main Dynamic Content -->
-    <main class="w-full max-w-md my-auto py-8">
+    <!-- Main Container -->
+    <main class="w-full max-w-2xl my-auto flex-1 flex flex-col justify-center">
         
-        <!-- SECTION 1: Lobby View (Create or Join) -->
-        <div id="lobbySection" class="bg-white/80 dark:bg-slate-800/60 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700/50 shadow-xl dark:shadow-2xl text-center transition-all">
-            <div class="w-20 h-20 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-6 border border-indigo-200 dark:border-indigo-500/20 shadow-inner">
-                <i class="fa-solid fa-microphone text-3xl"></i>
+        <!-- SECTION 1: Lobby View (Create or Join Room) -->
+        <div id="lobbySection" class="glass-panel rounded-3xl p-6 sm:p-8 text-center transition-all duration-300">
+            <div class="w-20 h-20 bg-gradient-to-tr from-rose-500 to-brand-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-lg shadow-brand-600/30 ring-4 ring-rose-400/20">
+                <i class="fa-solid fa-paper-plane text-3xl"></i>
             </div>
-            <h2 class="text-2xl font-bold mb-2">No Account Required</h2>
-            <p class="text-slate-600 dark:text-slate-400 text-sm mb-8 leading-relaxed">
-                Start a crystal-clear encrypted voice call instantly and invite anyone with a simple link.
+            
+            <h2 class="text-2xl font-bold mb-2 tracking-tight">Zero-Account Peer Chat</h2>
+            <p class="text-slate-600 dark:text-slate-300 text-xs sm:text-sm mb-6 max-w-md mx-auto leading-relaxed">
+                Direct peer-to-peer encrypted data messaging using WebRTC. Create a room or paste a call ID to start instantly.
             </p>
 
-            <button id="startCallBtn" class="w-full py-4 px-6 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center space-x-3">
-                <i class="fa-solid fa-plus text-lg"></i>
-                <span>Start New Voice Call</span>
+            <button id="startChatBtn" class="w-full py-3.5 px-6 bg-gradient-to-r from-brand-600 via-rose-600 to-brand-700 hover:from-brand-700 hover:to-rose-800 text-white font-semibold rounded-2xl shadow-lg shadow-brand-600/30 transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-plus text-sm"></i>
+                <span>Create New Chat Room</span>
             </button>
 
-            <!-- Join Call manually if needed -->
+            <!-- Join Call manually separator -->
             <div class="relative my-6 flex items-center justify-center">
-                <div class="border-t border-slate-200 dark:border-slate-700 w-full"></div>
-                <span class="bg-white dark:bg-slate-800 px-3 text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest absolute font-medium">or join call</span>
+                <div class="border-t border-rose-200 dark:border-rose-900/40 w-full"></div>
+                <span class="bg-rose-50/90 dark:bg-slate-900/90 px-3 text-[10px] text-rose-500 uppercase tracking-widest absolute font-semibold">OR JOIN ROOM</span>
             </div>
 
-            <div class="flex space-x-2">
-                <input id="roomInput" type="text" placeholder="Enter Call/Room ID" class="w-full bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
-                <button id="joinCallBtn" class="bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium px-5 rounded-xl text-sm transition">
-                    Join
+            <div class="flex flex-col sm:flex-row gap-2">
+                <input id="roomInput" type="text" placeholder="Enter Room / Peer ID" class="flex-1 bg-white/70 dark:bg-slate-900/70 border border-rose-200 dark:border-rose-900/60 rounded-xl px-4 py-2.5 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 transition">
+                <button id="joinChatBtn" class="bg-slate-900 hover:bg-slate-800 dark:bg-rose-950 dark:hover:bg-rose-900 dark:border dark:border-rose-800 text-white font-medium px-6 py-2.5 rounded-xl text-sm transition shadow-md">
+                    Join Room
                 </button>
             </div>
         </div>
 
-        <!-- SECTION 2: Active Call Screen -->
-        <div id="callSection" class="hidden bg-white/80 dark:bg-slate-800/60 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-slate-200 dark:border-slate-700/50 shadow-xl dark:shadow-2xl flex flex-col items-center transition-all">
+        <!-- SECTION 2: Active Glassmorphism Chat Interface -->
+        <div id="chatSection" class="hidden glass-panel rounded-3xl p-4 sm:p-5 flex flex-col h-[75vh] max-h-[680px] transition-all duration-300">
             
-            <!-- Room Share Box -->
-            <div class="w-full bg-slate-100 dark:bg-slate-900/80 rounded-2xl p-3 mb-6 border border-slate-200 dark:border-slate-700/60 flex items-center justify-between">
-                <div class="truncate mr-2 pl-1">
-                    <p class="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 tracking-wider">Share Link</p>
-                    <p id="shareUrlDisplay" class="text-xs text-indigo-600 dark:text-indigo-400 font-mono truncate">Generating link...</p>
+            <!-- Room Top Header Bar -->
+            <div class="flex items-center justify-between pb-3 mb-3 border-b border-rose-200/60 dark:border-rose-900/50">
+                <!-- Room Link Info -->
+                <div class="flex items-center space-x-2 min-w-0 flex-1 pr-2">
+                    <span class="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                    <div class="truncate">
+                        <p class="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 tracking-wider">Shareable Room Link</p>
+                        <p id="shareUrlDisplay" class="text-xs text-slate-600 dark:text-slate-300 font-mono truncate">Generating link...</p>
+                    </div>
                 </div>
-                <button id="copyBtn" class="shrink-0 bg-white dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-medium transition flex items-center space-x-1.5 border border-slate-300 dark:border-slate-700 shadow-sm">
-                    <i class="fa-regular fa-copy"></i>
-                    <span id="copyBtnText">Copy</span>
-                </button>
-            </div>
 
-            <!-- Avatar / Visualizer -->
-            <div class="relative my-8 flex items-center justify-center">
-                <!-- Outer Pulse Rings -->
-                <div id="pulseRing1" class="absolute w-44 h-44 rounded-full bg-indigo-500/10 animate-ping duration-1000 hidden"></div>
-                <div id="pulseRing2" class="absolute w-36 h-36 rounded-full bg-indigo-500/20 hidden"></div>
-                
-                <!-- Main Peer Profile Box -->
-                <div class="relative w-28 h-28 rounded-full bg-slate-200 dark:bg-slate-700 border-4 border-slate-300 dark:border-slate-600 shadow-xl flex items-center justify-center overflow-hidden z-10">
-                    <i id="userIcon" class="fa-solid fa-user text-4xl text-slate-400 dark:text-slate-400"></i>
+                <!-- Header Actions -->
+                <div class="flex items-center space-x-1.5 shrink-0">
+                    <button id="copyBtn" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-100 dark:bg-rose-950/80 hover:bg-rose-200 dark:hover:bg-rose-900 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 transition flex items-center space-x-1">
+                        <i class="fa-regular fa-copy"></i>
+                        <span id="copyBtnText">Copy Link</span>
+                    </button>
+                    <button id="clearChatBtn" class="w-8 h-8 rounded-xl bg-white/70 dark:bg-slate-900/70 hover:bg-rose-100 dark:hover:bg-rose-900/50 text-slate-500 dark:text-slate-400 hover:text-rose-600 border border-rose-200 dark:border-rose-900/60 flex items-center justify-center transition" title="Clear Chat History">
+                        <i class="fa-solid fa-trash-can text-xs"></i>
+                    </button>
+                    <button id="endChatBtn" class="w-8 h-8 rounded-xl bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center transition shadow-md shadow-rose-600/30" title="Leave Chat">
+                        <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    </button>
                 </div>
             </div>
 
-            <!-- Call Info -->
-            <p id="peerInfoText" class="text-lg font-semibold mb-1">Waiting for partner...</p>
-            <p id="callTimer" class="text-xs font-mono text-slate-500 dark:text-slate-400 mb-8">00:00</p>
-
-            <!-- Audio Waveform Visualizer -->
-            <div id="waveVisualizer" class="flex items-center space-x-1.5 mb-10 h-12 wave-paused">
-                <div class="w-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-full wave-bar"></div>
-                <div class="w-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-full wave-bar"></div>
-                <div class="w-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-full wave-bar"></div>
-                <div class="w-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-full wave-bar"></div>
-                <div class="w-1.5 bg-indigo-600 dark:bg-indigo-500 rounded-full wave-bar"></div>
+            <!-- Messages Stream -->
+            <div id="messagesContainer" class="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-3 py-2">
+                <!-- Welcome Hint Message -->
+                <div class="text-center my-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-rose-100/70 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/40">
+                        🔒 End-to-end peer-to-peer channel established
+                    </span>
+                </div>
             </div>
 
-            <!-- Call Controls -->
-            <div class="flex items-center space-x-6">
-                <!-- Mute Microphone -->
-                <button id="toggleMuteBtn" class="w-14 h-14 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white flex items-center justify-center text-xl transition-all shadow-md active:scale-95">
-                    <i id="muteIcon" class="fa-solid fa-microphone"></i>
-                </button>
-
-                <!-- End Call -->
-                <button id="endCallBtn" class="w-14 h-14 rounded-2xl bg-red-600 hover:bg-red-500 text-white flex items-center justify-center text-xl transition-all shadow-lg shadow-red-600/30 active:scale-95">
-                    <i class="fa-solid fa-phone-slash"></i>
-                </button>
+            <!-- Peer Typing Indicator -->
+            <div id="typingIndicator" class="h-6 flex items-center space-x-2 px-2 text-xs text-slate-500 dark:text-slate-400 invisible transition-all">
+                <span class="font-medium text-rose-600 dark:text-rose-400">Peer is typing</span>
+                <div class="flex space-x-1">
+                    <div class="w-1.5 h-1.5 bg-rose-500 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-rose-500 rounded-full typing-dot"></div>
+                    <div class="w-1.5 h-1.5 bg-rose-500 rounded-full typing-dot"></div>
+                </div>
             </div>
+
+            <!-- Message Input Area -->
+            <form id="chatForm" class="mt-1 flex items-center space-x-2">
+                <div class="relative flex-1">
+                    <input id="messageInput" type="text" placeholder="Type a message..." autocomplete="off" class="w-full bg-white/80 dark:bg-slate-900/80 border border-rose-200 dark:border-rose-900/80 rounded-2xl pl-4 pr-10 py-3 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500 transition shadow-inner">
+                    <button type="button" id="emojiQuickBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-500 text-base transition">
+                        😊
+                    </button>
+                </div>
+                <button type="submit" class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-700 to-rose-500 hover:from-brand-800 hover:to-rose-600 text-white flex items-center justify-center transition shadow-lg shadow-brand-600/30 shrink-0 active:scale-95">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                </button>
+            </form>
         </div>
 
     </main>
 
-    <!-- Notification Toast Box -->
-    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-800 dark:bg-slate-800 text-white border border-slate-700 px-4 py-2.5 rounded-full shadow-2xl text-xs font-medium flex items-center space-x-2 opacity-0 pointer-events-none transition-opacity duration-300 z-50">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+    <!-- Toast Notification Banner -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900/90 text-white border border-rose-500/30 px-4 py-2.5 rounded-2xl shadow-2xl text-xs font-medium flex items-center space-x-2 opacity-0 pointer-events-none transition-opacity duration-300 z-50 backdrop-blur-md">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-rose-400"></i>
         <span id="toastMsg">Link copied to clipboard!</span>
     </div>
 
-    <!-- Hidden Remote Audio Element -->
-    <audio id="remoteAudio" autoplay></audio>
-
     <!-- Footer -->
-    <footer class="text-xs text-slate-500 dark:text-slate-500 text-center py-2">
-        Powered by WebRTC • PeerJS Signaling
+    <footer class="text-[11px] text-slate-500 dark:text-slate-400 text-center py-2 font-medium">
+        GlassChat • WebRTC Data Channel Engine
     </footer>
 
-    <!-- WebRTC Application & Theme Logic -->
+    <!-- Application Script -->
     <script>
-        // --- Theme Toggle Logic ---
+        // --- Theme & Font Settings ---
         const themeToggleBtn = document.getElementById('themeToggleBtn');
         const themeIcon = document.getElementById('themeIcon');
+        const fontSelector = document.getElementById('fontSelector');
         const html = document.documentElement;
 
-        function initTheme() {
-            const savedTheme = localStorage.getItem('theme');
+        // Initialize saved preferences
+        function initSettings() {
+            // Theme
+            const savedTheme = localStorage.getItem('glasschat_theme');
             if (savedTheme === 'dark') {
                 html.classList.add('dark');
                 html.classList.remove('light');
-                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+                themeIcon.className = 'fa-solid fa-sun text-xs text-amber-400';
             } else {
                 html.classList.add('light');
                 html.classList.remove('dark');
-                themeIcon.className = 'fa-solid fa-moon text-slate-600';
+                themeIcon.className = 'fa-solid fa-moon text-xs text-slate-600';
+            }
+
+            // Font
+            const savedFont = localStorage.getItem('glasschat_font');
+            if (savedFont) {
+                fontSelector.value = savedFont;
+                document.body.style.fontFamily = savedFont;
             }
         }
 
@@ -196,255 +328,277 @@
             if (html.classList.contains('dark')) {
                 html.classList.remove('dark');
                 html.classList.add('light');
-                localStorage.setItem('theme', 'light');
-                themeIcon.className = 'fa-solid fa-moon text-slate-600';
+                localStorage.setItem('glasschat_theme', 'light');
+                themeIcon.className = 'fa-solid fa-moon text-xs text-slate-600';
             } else {
                 html.classList.add('dark');
                 html.classList.remove('light');
-                localStorage.setItem('theme', 'dark');
-                themeIcon.className = 'fa-solid fa-sun text-amber-400';
+                localStorage.setItem('glasschat_theme', 'dark');
+                themeIcon.className = 'fa-solid fa-sun text-xs text-amber-400';
             }
         });
 
-        initTheme();
+        fontSelector.addEventListener('change', (e) => {
+            const font = e.target.value;
+            document.body.style.fontFamily = font;
+            localStorage.setItem('glasschat_font', font);
+        });
 
-        // --- Call State Variables ---
-        let localStream = null;
+        initSettings();
+
+        // --- Sound Effects using Tone.js ---
+        let soundEnabled = true;
+        const soundToggleBtn = document.getElementById('soundToggleBtn');
+        const soundIcon = document.getElementById('soundIcon');
+
+        soundToggleBtn.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundIcon.className = soundEnabled ? 'fa-solid fa-volume-high text-xs text-rose-500' : 'fa-solid fa-volume-xmark text-xs text-slate-400';
+            showToast(soundEnabled ? "Sound enabled" : "Sound muted", "fa-solid fa-volume-high text-rose-400");
+        });
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            try {
+                if (Tone.context.state !== 'running') {
+                    Tone.start();
+                }
+                const synth = new Tone.Synth({
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
+                }).toDestination();
+                
+                if (type === 'sent') {
+                    synth.triggerAttackRelease("C6", "16n");
+                } else if (type === 'received') {
+                    synth.triggerAttackRelease("G5", "16n", "+0.05");
+                }
+            } catch (e) {
+                console.log("Audio play suppressed:", e);
+            }
+        }
+
+        // --- WebRTC PeerJS State ---
         let peer = null;
-        let activeCall = null;
-        let isMuted = false;
-        let timerInterval = null;
-        let callStartTime = null;
+        let dataConnection = null;
+        let typingTimeout = null;
 
-        // --- DOM Elements ---
+        // DOM Elements
         const lobbySection = document.getElementById('lobbySection');
-        const callSection = document.getElementById('callSection');
-        const startCallBtn = document.getElementById('startCallBtn');
-        const joinCallBtn = document.getElementById('joinCallBtn');
+        const chatSection = document.getElementById('chatSection');
+        const startChatBtn = document.getElementById('startChatBtn');
+        const joinChatBtn = document.getElementById('joinChatBtn');
         const roomInput = document.getElementById('roomInput');
         const shareUrlDisplay = document.getElementById('shareUrlDisplay');
         const copyBtn = document.getElementById('copyBtn');
         const copyBtnText = document.getElementById('copyBtnText');
-        const toggleMuteBtn = document.getElementById('toggleMuteBtn');
-        const muteIcon = document.getElementById('muteIcon');
-        const endCallBtn = document.getElementById('endCallBtn');
+        const clearChatBtn = document.getElementById('clearChatBtn');
+        const endChatBtn = document.getElementById('endChatBtn');
         const statusBadge = document.getElementById('statusBadge');
         const statusText = document.getElementById('statusText');
-        const peerInfoText = document.getElementById('peerInfoText');
-        const callTimer = document.getElementById('callTimer');
-        const waveVisualizer = document.getElementById('waveVisualizer');
-        const remoteAudio = document.getElementById('remoteAudio');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const messageInput = document.getElementById('messageInput');
+        const chatForm = document.getElementById('chatForm');
+        const typingIndicator = document.getElementById('typingIndicator');
         const toast = document.getElementById('toast');
         const toastMsg = document.getElementById('toastMsg');
+        const emojiQuickBtn = document.getElementById('emojiQuickBtn');
 
-        // Helper: Generate Random Unique Room ID
+        // Helper: Generate Room ID
         function generateRoomId() {
-            return 'call-' + Math.random().toString(36).substring(2, 8) + '-' + Math.random().toString(36).substring(2, 6);
+            return 'chat-' + Math.random().toString(36).substring(2, 8);
         }
 
-        // Helper: Show Toast Message
-        function showToast(message, iconClass = "fa-solid fa-circle-check text-emerald-400") {
+        // Helper: Toast Message
+        function showToast(message, iconClass = "fa-solid fa-circle-check text-rose-400") {
             toastMsg.innerText = message;
             document.getElementById('toastIcon').className = iconClass;
             toast.classList.remove('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 toast.classList.add('opacity-0', 'pointer-events-none');
-            }, 3000);
+            }, 2500);
         }
 
-        // Helper: Format Call Duration
-        function updateTimer() {
-            if (!callStartTime) return;
-            const now = new Date();
-            const diffSec = Math.floor((now - callStartTime) / 1000);
-            const mins = String(Math.floor(diffSec / 60)).padStart(2, '0');
-            const secs = String(diffSec % 60).padStart(2, '0');
-            callTimer.innerText = `${mins}:${secs}`;
-        }
-
-        // Helper: Update Connection Status UI
+        // Helper: Status Indicator
         function setStatus(text, type = 'neutral') {
             statusText.innerText = text;
             const dot = statusBadge.querySelector('span');
             
             if (type === 'connected') {
-                statusBadge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
+                statusBadge.className = "flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20";
                 dot.className = "w-2 h-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse";
             } else if (type === 'waiting') {
-                statusBadge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
+                statusBadge.className = "flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20";
                 dot.className = "w-2 h-2 rounded-full bg-amber-500 dark:bg-amber-400 animate-ping";
             } else {
-                statusBadge.className = "flex items-center space-x-2 px-3 py-1.5 rounded-full text-xs font-medium bg-slate-200/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700";
-                dot.className = "w-2 h-2 rounded-full bg-slate-500";
+                statusBadge.className = "flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-rose-100/80 dark:bg-slate-900/80 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900/50";
+                dot.className = "w-2 h-2 rounded-full bg-slate-400";
             }
         }
 
-        // --- User Media (Microphone) Access ---
-        async function getMicrophoneStream() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-                localStream = stream;
-                return stream;
-            } catch (err) {
-                console.error("Microphone Access Error:", err);
-                showToast("Microphone access denied or not found!", "fa-solid fa-triangle-exclamation text-red-400");
-                throw err;
+        // --- Render Message Bubble ---
+        function appendMessage(text, isSent = false, timestamp = null) {
+            const timeStr = timestamp || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            
+            const msgWrapper = document.createElement('div');
+            msgWrapper.className = `flex flex-col ${isSent ? 'items-end' : 'items-start'} my-1`;
+
+            const bubble = document.createElement('div');
+            if (isSent) {
+                bubble.className = "max-w-[82%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl rounded-tr-xs bg-gradient-to-r from-brand-600 to-rose-600 text-white text-sm shadow-md shadow-brand-600/20 break-words";
+            } else {
+                bubble.className = "max-w-[82%] sm:max-w-[75%] px-4 py-2.5 rounded-2xl rounded-tl-xs bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-slate-100 border border-rose-200/70 dark:border-rose-900/60 text-sm shadow-sm break-words";
             }
+
+            bubble.innerText = text;
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = "text-[10px] text-slate-400 dark:text-slate-500 mt-1 px-1 font-mono";
+            timeSpan.innerText = timeStr;
+
+            msgWrapper.appendChild(bubble);
+            msgWrapper.appendChild(timeSpan);
+            messagesContainer.appendChild(msgWrapper);
+
+            // Auto-scroll to bottom
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
 
-        // --- Start Call (Host Mode) ---
-        async function initHostCall() {
+        // --- Peer Connection Handlers ---
+        function setupDataConnection(conn) {
+            dataConnection = conn;
+
+            dataConnection.on('open', () => {
+                setStatus("Connected", "connected");
+                showToast("Peer connected!", "fa-solid fa-link text-emerald-400");
+            });
+
+            dataConnection.on('data', (data) => {
+                if (typeof data === 'object') {
+                    if (data.type === 'chat') {
+                        typingIndicator.classList.add('invisible');
+                        appendMessage(data.text, false, data.time);
+                        playSound('received');
+                    } else if (data.type === 'typing') {
+                        if (data.isTyping) {
+                            typingIndicator.classList.remove('invisible');
+                        } else {
+                            typingIndicator.classList.add('invisible');
+                        }
+                    }
+                }
+            });
+
+            dataConnection.on('close', () => {
+                setStatus("Peer Left", "neutral");
+                showToast("Peer disconnected", "fa-solid fa-circle-exclamation text-amber-400");
+            });
+        }
+
+        // --- Start Room (Host) ---
+        function initHostRoom() {
             const roomId = generateRoomId();
             const shareableUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
             
-            try {
-                await getMicrophoneStream();
-            } catch {
-                return;
-            }
-
             lobbySection.classList.add('hidden');
-            callSection.classList.remove('hidden');
+            chatSection.classList.remove('hidden');
             shareUrlDisplay.innerText = shareableUrl;
-            peerInfoText.innerText = "Waiting for partner...";
             setStatus("Waiting for peer...", "waiting");
 
             peer = new Peer(roomId);
 
             peer.on('open', (id) => {
-                console.log("Room initialized with ID:", id);
+                console.log("Peer Host Ready ID:", id);
             });
 
-            peer.on('call', (incomingCall) => {
-                activeCall = incomingCall;
-                incomingCall.answer(localStream);
-
-                incomingCall.on('stream', (remoteStream) => {
-                    handleRemoteStream(remoteStream);
-                });
-
-                incomingCall.on('close', () => {
-                    handleCallEnd();
-                });
+            peer.on('connection', (conn) => {
+                setupDataConnection(conn);
             });
 
             peer.on('error', (err) => {
                 console.error("Peer error:", err);
-                showToast("Connection error occurred", "fa-solid fa-triangle-exclamation text-red-400");
+                showToast("Connection failed", "fa-solid fa-circle-xmark text-rose-500");
             });
         }
 
-        // --- Join Existing Call (Guest Mode) ---
-        async function initGuestCall(targetRoomId) {
-            try {
-                await getMicrophoneStream();
-            } catch {
-                return;
-            }
-
+        // --- Join Room (Guest) ---
+        function initGuestRoom(targetRoomId) {
             lobbySection.classList.add('hidden');
-            callSection.classList.remove('hidden');
+            chatSection.classList.remove('hidden');
             
             const shareableUrl = `${window.location.origin}${window.location.pathname}?room=${targetRoomId}`;
             shareUrlDisplay.innerText = shareableUrl;
-            peerInfoText.innerText = "Connecting...";
             setStatus("Connecting...", "waiting");
 
             peer = new Peer();
 
             peer.on('open', () => {
-                const call = peer.call(targetRoomId, localStream);
-                activeCall = call;
-
-                call.on('stream', (remoteStream) => {
-                    handleRemoteStream(remoteStream);
-                });
-
-                call.on('close', () => {
-                    handleCallEnd();
-                });
+                const conn = peer.connect(targetRoomId);
+                setupDataConnection(conn);
             });
 
             peer.on('error', (err) => {
-                console.error("Peer error:", err);
-                showToast("Could not connect to room", "fa-solid fa-triangle-exclamation text-red-400");
-                handleCallEnd();
+                console.error("Peer connection error:", err);
+                showToast("Could not connect to peer room", "fa-solid fa-circle-xmark text-rose-500");
             });
         }
 
-        // --- Handle Connected Remote Stream ---
-        function handleRemoteStream(stream) {
-            remoteAudio.srcObject = stream;
-            remoteAudio.play();
+        // --- User Actions ---
+        startChatBtn.addEventListener('click', initHostRoom);
 
-            peerInfoText.innerText = "Call Connected";
-            setStatus("Connected", "connected");
-            waveVisualizer.classList.remove('wave-paused');
-
-            document.getElementById('pulseRing1').classList.remove('hidden');
-            document.getElementById('pulseRing2').classList.remove('hidden');
-
-            callStartTime = new Date();
-            timerInterval = setInterval(updateTimer, 1000);
-        }
-
-        // --- End Call / Reset State ---
-        function handleCallEnd() {
-            if (activeCall) activeCall.close();
-            if (peer) peer.destroy();
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-
-            if (timerInterval) clearInterval(timerInterval);
-            
-            waveVisualizer.classList.add('wave-paused');
-            document.getElementById('pulseRing1').classList.add('hidden');
-            document.getElementById('pulseRing2').classList.add('hidden');
-            callTimer.innerText = "00:00";
-            setStatus("Disconnected", "neutral");
-
-            window.history.pushState({}, document.title, window.location.pathname);
-
-            callSection.classList.add('hidden');
-            lobbySection.classList.remove('hidden');
-            showToast("Call ended", "fa-solid fa-phone-slash text-slate-400");
-        }
-
-        // --- Event Listeners ---
-        startCallBtn.addEventListener('click', () => {
-            initHostCall();
-        });
-
-        joinCallBtn.addEventListener('click', () => {
+        joinChatBtn.addEventListener('click', () => {
             const roomId = roomInput.value.trim();
             if (roomId) {
-                initGuestCall(roomId);
+                initGuestRoom(roomId);
             } else {
-                showToast("Please enter a valid Call ID", "fa-solid fa-circle-exclamation text-amber-400");
+                showToast("Please enter a valid Room ID", "fa-solid fa-circle-exclamation text-amber-400");
             }
         });
 
-        toggleMuteBtn.addEventListener('click', () => {
-            if (localStream && localStream.getAudioTracks().length > 0) {
-                isMuted = !isMuted;
-                localStream.getAudioTracks()[0].enabled = !isMuted;
+        // Send Message
+        chatForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const text = messageInput.value.trim();
+            if (!text) return;
 
-                if (isMuted) {
-                    toggleMuteBtn.className = 'w-14 h-14 rounded-2xl bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-300 dark:border-red-500/40 flex items-center justify-center text-xl transition-all shadow-md active:scale-95';
-                    muteIcon.className = 'fa-solid fa-microphone-slash';
-                    showToast("Microphone Muted", "fa-solid fa-microphone-slash text-amber-400");
-                } else {
-                    toggleMuteBtn.className = 'w-14 h-14 rounded-2xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-800 dark:text-white flex items-center justify-center text-xl transition-all shadow-md active:scale-95';
-                    muteIcon.className = 'fa-solid fa-microphone';
-                    showToast("Microphone Unmuted", "fa-solid fa-microphone text-emerald-400");
-                }
+            if (!dataConnection || !dataConnection.open) {
+                showToast("Waiting for a peer to join...", "fa-solid fa-clock text-amber-400");
+                return;
+            }
+
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            dataConnection.send({ type: 'chat', text: text, time: timeStr });
+
+            appendMessage(text, true, timeStr);
+            playSound('sent');
+            messageInput.value = '';
+
+            // Stop typing status
+            dataConnection.send({ type: 'typing', isTyping: false });
+        });
+
+        // Typing Notification Broadcast
+        messageInput.addEventListener('input', () => {
+            if (dataConnection && dataConnection.open) {
+                dataConnection.send({ type: 'typing', isTyping: true });
+
+                clearTimeout(typingTimeout);
+                typingTimeout = setTimeout(() => {
+                    dataConnection.send({ type: 'typing', isTyping: false });
+                }, 1500);
             }
         });
 
-        endCallBtn.addEventListener('click', handleCallEnd);
+        // Quick Emojis
+        const emojis = ['😊', '😂', '🔥', '❤️', '👍', '🎉', '🚀'];
+        let emojiIdx = 0;
+        emojiQuickBtn.addEventListener('click', () => {
+            messageInput.value += emojis[emojiIdx];
+            emojiIdx = (emojiIdx + 1) % emojis.length;
+            messageInput.focus();
+        });
 
+        // Copy Link
         copyBtn.addEventListener('click', () => {
             const shareUrl = shareUrlDisplay.innerText;
             if (shareUrl && shareUrl !== "Generating link...") {
@@ -456,16 +610,40 @@
                 document.body.removeChild(dummy);
 
                 copyBtnText.innerText = "Copied!";
-                showToast("Call link copied to clipboard!");
-                setTimeout(() => { copyBtnText.innerText = "Copy"; }, 2000);
+                showToast("Room link copied to clipboard!");
+                setTimeout(() => { copyBtnText.innerText = "Copy Link"; }, 2000);
             }
         });
 
+        // Clear Chat History
+        clearChatBtn.addEventListener('click', () => {
+            messagesContainer.innerHTML = `
+                <div class="text-center my-4">
+                    <span class="inline-block px-3 py-1 rounded-full text-[11px] font-medium bg-rose-100/70 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/50 dark:border-rose-900/40">
+                        Chat history cleared
+                    </span>
+                </div>`;
+            showToast("Chat cleared");
+        });
+
+        // End / Leave Chat
+        endChatBtn.addEventListener('click', () => {
+            if (dataConnection) dataConnection.close();
+            if (peer) peer.destroy();
+
+            window.history.pushState({}, document.title, window.location.pathname);
+            chatSection.classList.add('hidden');
+            lobbySection.classList.remove('hidden');
+            setStatus("Disconnected", "neutral");
+            showToast("Left room");
+        });
+
+        // Check for URL Parameter `?room=xyz` on load
         window.addEventListener('load', () => {
             const urlParams = new URLSearchParams(window.location.search);
             const roomParam = urlParams.get('room');
             if (roomParam) {
-                initGuestCall(roomParam);
+                initGuestRoom(roomParam);
             }
         });
     </script>
