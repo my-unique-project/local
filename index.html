@@ -1,0 +1,2905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Shadow of Arashi — Silhouette Action Platformer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-crimson: #ef4444;
+      --accent-gold: #f59e0b;
+      --accent-emerald: #10b981;
+      --accent-cyan: #06b6d4;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #05070a;
+      font-family: 'Inter', sans-serif;
+      color: #f8fafc;
+      touch-action: none;
+    }
+
+    .font-cinzel {
+      font-family: 'Cinzel', serif;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #05070a;
+    }
+
+    canvas#gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Glassmorphic Tactical HUD */
+    .hud-glass {
+      background: rgba(9, 13, 22, 0.76);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    }
+
+    .hud-panel-glow {
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    }
+
+    /* Menu Cards & Selectors */
+    .option-card {
+      transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(15, 23, 42, 0.65);
+      cursor: pointer;
+    }
+
+    .option-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.3);
+      background: rgba(30, 41, 59, 0.8);
+    }
+
+    .option-card.active {
+      border-color: #f59e0b;
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(239, 68, 68, 0.18));
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.28), inset 0 0 12px rgba(245, 158, 11, 0.15);
+    }
+
+    /* Primary CTA Start Game Button */
+    .btn-start-game {
+      background: linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%);
+      border: 1px solid rgba(252, 165, 165, 0.45);
+      box-shadow: 0 10px 30px -4px rgba(220, 38, 38, 0.65), 0 0 15px rgba(239, 68, 68, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.35);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .btn-start-game:hover {
+      transform: translateY(-2px) scale(1.02);
+      background: linear-gradient(135deg, #ef4444 0%, #b91c1c 55%, #991b1b 100%);
+      box-shadow: 0 14px 36px -4px rgba(239, 68, 68, 0.8), 0 0 25px rgba(245, 158, 11, 0.5), inset 0 1px 2px rgba(255, 255, 255, 0.5);
+    }
+
+    .btn-start-game:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    /* Touch Control Buttons */
+    .touch-btn {
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1.5px solid rgba(255, 255, 255, 0.22);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.18);
+      transition: transform 0.08s ease, background-color 0.08s ease, border-color 0.08s ease;
+    }
+
+    .touch-btn.pressed {
+      transform: scale(0.91);
+      background: rgba(239, 68, 68, 0.42);
+      border-color: rgba(252, 165, 165, 0.8);
+    }
+
+    /* Portrait warning overlay for small mobile screens */
+    #portrait-overlay {
+      display: none;
+    }
+
+    @media screen and (max-width: 767px) and (orientation: portrait) {
+      #portrait-overlay:not(.dismissed) {
+        display: flex;
+      }
+    }
+
+    /* Pulse Animations for Badges */
+    @keyframes pulseReady {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.82; transform: scale(1.03); }
+    }
+
+    .badge-ready {
+      animation: pulseReady 2s infinite ease-in-out;
+    }
+
+    /* Custom Scrollbar for Menu on tiny landscape viewports */
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.4);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(245, 158, 11, 0.5);
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <!-- High-DPI Vector Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- Portrait Orientation Helper Overlay (Mobile Landscape Enforcement with Override) -->
+    <div id="portrait-overlay" class="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex-col items-center justify-center p-6 text-center">
+      <div class="w-16 h-16 mb-4 rounded-2xl bg-red-500/15 border border-red-500/40 flex items-center justify-center text-amber-400 animate-bounce">
+        <svg class="w-9 h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+        </svg>
+      </div>
+      <h2 class="font-cinzel text-2xl font-bold text-white tracking-wider mb-2">LANDSCAPE MODE RECOMMENDED</h2>
+      <p class="text-slate-300 text-sm max-w-xs mb-6">
+        Rotate your device horizontally for the full widescreen tactical scoreboard and precision ninja controls.
+      </p>
+      <button id="btn-dismiss-portrait" class="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-xs font-semibold uppercase tracking-wider text-slate-200">
+        Continue Anyway
+      </button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PROFESSIONAL SCOREBOARD & TACTICAL HUD (HIT VALIDITY + ABILITY READINESS) -->
+    <!-- ========================================================================= -->
+    <header id="hud-root" class="fixed top-0 left-0 right-0 z-20 pointer-events-none px-2.5 pt-2 sm:px-4 sm:pt-3 transition-opacity duration-300 opacity-0">
+      <div class="max-w-7xl mx-auto grid grid-cols-12 gap-2 items-start">
+        
+        <!-- LEFT PANEL: Vitals, Level/Difficulty, Scenario, Score & Time (4 Cols) -->
+        <div class="col-span-12 lg:col-span-4 hud-glass rounded-xl p-2 sm:p-2.5 pointer-events-auto">
+          <div class="flex items-center justify-between gap-2 mb-1.5">
+            <!-- Ninja Emblem + Health Bar -->
+            <div class="flex items-center gap-2 flex-1 min-w-0">
+              <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-rose-900 border border-red-400/40 flex items-center justify-center shadow-inner shrink-0">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center justify-between text-[11px] font-bold tracking-wider uppercase mb-0.5">
+                  <span class="text-slate-200 flex items-center gap-1.5">
+                    <span>ARASHI VITALITY</span>
+                    <span id="hud-Scenario-badge" class="px-1.5 py-0.2 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[9px]">DAWN</span>
+                  </span>
+                  <span id="hud-hp-text" class="font-mono-tech text-emerald-400">100 / 100</span>
+                </div>
+                <!-- Health Bar Track -->
+                <div class="w-full h-2.5 bg-slate-900/90 rounded-full overflow-hidden border border-white/10 p-0.5">
+                  <div id="hud-hp-bar" class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-300 rounded-full transition-all duration-150" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pause & Audio Quick Buttons -->
+            <div class="flex items-center gap-1 shrink-0">
+              <button id="btn-mute" title="Toggle Sound" class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-white/10 flex items-center justify-center text-slate-200 transition">
+                <svg id="icon-sound-on" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                </svg>
+                <svg id="icon-sound-off" class="w-4 h-4 hidden text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                </svg>
+              </button>
+              <button id="btn-pause" title="Pause / Menu (P)" class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 border border-white/10 flex items-center justify-center text-slate-200 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Scoreboard Telemetry Grid -->
+          <div class="grid grid-cols-4 gap-1.5 pt-1 border-t border-white/10 text-center">
+            <div class="bg-slate-900/60 rounded-lg py-1 px-1.5 border border-white/5">
+              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">SCORE</div>
+              <div id="hud-score" class="font-mono-tech text-xs sm:text-sm font-extrabold text-amber-400">00000</div>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg py-1 px-1.5 border border-white/5">
+              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">KILLS</div>
+              <div id="hud-kills" class="font-mono-tech text-xs sm:text-sm font-extrabold text-red-400">0 / 12</div>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg py-1 px-1.5 border border-white/5">
+              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">LEVEL</div>
+              <div id="hud-difficulty" class="font-mono-tech text-xs sm:text-sm font-extrabold text-cyan-400">NORMAL</div>
+            </div>
+            <div class="bg-slate-900/60 rounded-lg py-1 px-1.5 border border-white/5">
+              <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">TIME</div>
+              <div id="hud-time" class="font-mono-tech text-xs sm:text-sm font-extrabold text-slate-100">00:00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CENTER PANEL: HIT VALIDITY & COMBAT TELEMETRY SCOREBOARD (4 Cols) -->
+        <div class="col-span-6 lg:col-span-4 hud-glass hud-panel-glow rounded-xl p-2 sm:p-2.5">
+          <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+              <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">HIT VALIDITY & TELEMETRY</span>
+            </div>
+            <span id="hud-accuracy" class="font-mono-tech text-[10px] font-bold text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-400/20">
+              ACC: 100%
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between gap-2">
+            <!-- Live Hit Validity Badge -->
+            <div class="flex-1 bg-slate-900/80 rounded-lg p-1.5 border border-white/10 flex items-center justify-between">
+              <div>
+                <div class="text-[9px] uppercase tracking-wider text-slate-400 font-semibold">HIT STATUS</div>
+                <div id="hud-hit-validity-badge" class="font-mono-tech text-xs sm:text-sm font-extrabold text-emerald-400 tracking-wide">
+                  READY • VALID
+                </div>
+              </div>
+              <div id="hud-hit-icon" class="w-7 h-7 rounded-md bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-mono-tech text-xs font-black">
+                ✓
+              </div>
+            </div>
+
+            <!-- Combo Multiplier & Valid Hits Count -->
+            <div class="w-24 sm:w-28 bg-slate-900/80 rounded-lg p-1.5 border border-white/10 text-right">
+              <div class="flex items-center justify-between text-[9px] uppercase text-slate-400 font-semibold">
+                <span>VALID</span>
+                <span id="hud-valid-count" class="font-mono-tech text-slate-200">0</span>
+              </div>
+              <div id="hud-combo-display" class="font-mono-tech text-xs sm:text-sm font-black text-amber-400 tracking-tight">
+                0 HIT (x1.0)
+              </div>
+            </div>
+          </div>
+
+          <!-- Shrine Progress Bar -->
+          <div class="mt-1.5 flex items-center gap-2">
+            <span class="text-[9px] font-bold uppercase tracking-wider text-slate-400 shrink-0">SHRINE DIST</span>
+            <div class="flex-1 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-white/10">
+              <div id="hud-progress-bar" class="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-150" style="width: 0%;"></div>
+            </div>
+            <span id="hud-progress-text" class="font-mono-tech text-[9px] font-bold text-slate-300">0%</span>
+          </div>
+        </div>
+
+        <!-- RIGHT PANEL: ABILITY READINESS STATUS BOARD (4 Cols) -->
+        <div class="col-span-6 lg:col-span-4 hud-glass rounded-xl p-2 sm:p-2.5">
+          <div class="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5">
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-slate-300">ABILITY READINESS</span>
+            <span id="hud-all-ready-pill" class="font-mono-tech text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+              SYSTEMS READY
+            </span>
+          </div>
+
+          <div class="grid grid-cols-3 gap-1.5">
+            <!-- 1. Shadow Dash (1.5s Cooldown) -->
+            <div class="bg-slate-900/75 rounded-lg p-1.5 border border-white/10">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[9px] font-bold uppercase text-slate-300">DASH [L/X]</span>
+                <span id="hud-dash-status" class="badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40">
+                  READY
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
+                <div id="hud-dash-bar" class="h-full bg-cyan-400 transition-all duration-75" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- 2. Shuriken Throw -->
+            <div class="bg-slate-900/75 rounded-lg p-1.5 border border-white/10">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[9px] font-bold uppercase text-slate-300">STAR [J/C]</span>
+                <span id="hud-shuriken-status" class="badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40">
+                  READY
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
+                <div id="hud-shuriken-bar" class="h-full bg-amber-400 transition-all duration-75" style="width: 100%;"></div>
+              </div>
+            </div>
+
+            <!-- 3. Katana 3-Hit Combo -->
+            <div class="bg-slate-900/75 rounded-lg p-1.5 border border-white/10">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[9px] font-bold uppercase text-slate-300">BLADE [K/Z]</span>
+                <span id="hud-blade-status" class="badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40">
+                  READY
+                </span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-950 rounded-full overflow-hidden border border-white/10">
+                <div id="hud-blade-bar" class="h-full bg-rose-500 transition-all duration-75" style="width: 100%;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- MAIN MENU / PAUSE / VICTORY / DEFEAT OVERLAY                              -->
+    <!-- ========================================================================= -->
+    <div id="menu-overlay" class="fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6 bg-slate-950/75 backdrop-blur-md transition-opacity duration-300">
+      <div class="hud-glass rounded-2xl max-w-3xl w-full max-h-[92vh] overflow-y-auto custom-scroll p-4 sm:p-7 border border-white/15 shadow-2xl relative">
+        
+        <!-- Decorative Top Torii Accent -->
+        <div class="flex items-center justify-between border-b border-white/10 pb-3 mb-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="px-2 py-0.5 rounded bg-red-600/25 border border-red-500/50 text-red-300 text-[10px] font-bold uppercase tracking-widest">
+                SILHOUETTE ACTION PLATFORMER
+              </span>
+              <span class="px-2 py-0.5 rounded bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] font-mono-tech font-bold">
+                HI-DPI 60/120HZ ENGINE
+              </span>
+            </div>
+            <h1 id="menu-title" class="font-cinzel text-2xl sm:text-4xl font-black text-white tracking-wider mt-1">
+              SHADOW OF ARASHI
+            </h1>
+            <p id="menu-subtitle" class="text-xs sm:text-sm text-slate-300">
+              Master the three-fold blade, shadow dash through lethal traps, and purify the corrupted shrine.
+            </p>
+          </div>
+
+          <!-- Mini Crest -->
+          <div class="hidden sm:flex w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-slate-900 border border-red-400/40 items-center justify-center shadow-lg shrink-0">
+            <svg class="w-8 h-8 text-amber-400" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L14.5 9.5L22 12L14.5 14.5L12 22L9.5 14.5L2 12L9.5 9.5L12 2Z" />
+            </svg>
+          </div>
+        </div>
+
+        <!-- Post-Game Summary Banner (Hidden on initial launch, shown on Victory / Defeat) -->
+        <div id="menu-run-summary" class="hidden mb-4 p-3.5 rounded-xl bg-slate-900/90 border border-amber-500/40">
+          <div class="text-xs font-bold uppercase tracking-widest text-amber-400 mb-2" id="summary-banner-title">COMBAT TELEMETRY REPORT</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-white/10">
+              <div class="text-[10px] text-slate-400 uppercase">FINAL SCORE</div>
+              <div id="summary-score" class="font-mono-tech text-base font-extrabold text-amber-400">0</div>
+            </div>
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-white/10">
+              <div class="text-[10px] text-slate-400 uppercase">VALID HITS / ACC</div>
+              <div id="summary-accuracy" class="font-mono-tech text-base font-extrabold text-emerald-400">0 (100%)</div>
+            </div>
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-white/10">
+              <div class="text-[10px] text-slate-400 uppercase">ENEMIES SLAIN</div>
+              <div id="summary-kills" class="font-mono-tech text-base font-extrabold text-red-400">0 / 12</div>
+            </div>
+            <div class="bg-slate-950/80 p-2 rounded-lg border border-white/10">
+              <div class="text-[10px] text-slate-400 uppercase">CLEAR TIME</div>
+              <div id="summary-time" class="font-mono-tech text-base font-extrabold text-cyan-400">00:00</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Configuration Grid: Difficulty Level & Time-of-Day Scenario -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          
+          <!-- 1. Select Difficulty Level (Easy, Normal, Hard) -->
+          <div class="bg-slate-900/55 rounded-xl p-3.5 border border-white/10">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                <span>1. SELECT DIFFICULTY LEVEL</span>
+              </span>
+              <span id="selected-diff-label" class="font-mono-tech text-[11px] font-bold text-slate-300">NORMAL</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2" id="difficulty-selector">
+              <button type="button" data-diff="EASY" class="option-card rounded-xl p-2.5 text-left">
+                <div class="font-bold text-xs text-emerald-400">EASY</div>
+                <div class="text-[10px] text-slate-300 mt-0.5">150 HP • Slower Guards</div>
+                <div class="text-[9px] font-mono-tech text-slate-400 mt-1">1.0x Score</div>
+              </button>
+              <button type="button" data-diff="NORMAL" class="option-card active rounded-xl p-2.5 text-left">
+                <div class="font-bold text-xs text-amber-400">NORMAL</div>
+                <div class="text-[10px] text-slate-300 mt-0.5">100 HP • Tactical AI</div>
+                <div class="text-[9px] font-mono-tech text-slate-400 mt-1">1.5x Score</div>
+              </button>
+              <button type="button" data-diff="HARD" class="option-card rounded-xl p-2.5 text-left">
+                <div class="font-bold text-xs text-red-400">HARD</div>
+                <div class="text-[10px] text-slate-300 mt-0.5">75 HP • LethalRonin</div>
+                <div class="text-[9px] font-mono-tech text-slate-400 mt-1">2.2x Score</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Select Time-of-Day Scenario (Morning, Day, Evening, Dawn) -->
+          <div class="bg-slate-900/55 rounded-xl p-3.5 border border-white/10">
+            <div class="flex items-center justify-between mb-2.5">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-cyan-400">
+                2. SELECT SCENARIO ATMOSPHERE
+              </span>
+              <span id="selected-scenario-label" class="font-mono-tech text-[11px] font-bold text-slate-300">DAWN</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="scenario-selector">
+              <button type="button" data-scenario="MORNING" class="option-card rounded-xl p-2 text-center">
+                <div class="w-full h-3 rounded mb-1.5" style="background: linear-gradient(90deg, #38bdf8, #fde68a);"></div>
+                <div class="font-bold text-xs text-sky-300">MORNING</div>
+                <div class="text-[9px] text-slate-400">Golden Mist</div>
+              </button>
+              <button type="button" data-scenario="DAY" class="option-card rounded-xl p-2 text-center">
+                <div class="w-full h-3 rounded mb-1.5" style="background: linear-gradient(90deg, #0284c7, #bae6fd);"></div>
+                <div class="font-bold text-xs text-cyan-200">DAY</div>
+                <div class="text-[9px] text-slate-400">Jade Bamboo</div>
+              </button>
+              <button type="button" data-scenario="EVENING" class="option-card rounded-xl p-2 text-center">
+                <div class="w-full h-3 rounded mb-1.5" style="background: linear-gradient(90deg, #7c2d12, #f97316, #facc15);"></div>
+                <div class="font-bold text-xs text-orange-400">EVENING</div>
+                <div class="text-[9px] text-slate-400">Blood Dusk</div>
+              </button>
+              <button type="button" data-scenario="DAWN" class="option-card active rounded-xl p-2 text-center">
+                <div class="w-full h-3 rounded mb-1.5" style="background: linear-gradient(90deg, #311042, #be185d, #f43f5e);"></div>
+                <div class="font-bold text-xs text-rose-300">DAWN</div>
+                <div class="text-[9px] text-slate-400">Violet Horizon</div>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Controls Reference Bar -->
+        <div class="bg-slate-900/70 rounded-xl p-3 border border-white/10 mb-5">
+          <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">CONTROLS (KEYBOARD & ON-SCREEN TOUCH SUPPORTED)</div>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+            <div class="flex items-center gap-2 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono-tech bg-slate-800 text-amber-300 rounded border border-slate-600">A / D / ◀ ▶</kbd>
+              <span class="text-slate-300 text-[11px]">Run</span>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono-tech bg-slate-800 text-amber-300 rounded border border-slate-600">W / ▲ / SPC</kbd>
+              <span class="text-slate-300 text-[11px]">2x Jump / Wall</span>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono-tech bg-slate-800 text-rose-400 rounded border border-slate-600">K / Z</kbd>
+              <span class="text-slate-300 text-[11px]">3-Hit Katana</span>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono-tech bg-slate-800 text-cyan-300 rounded border border-slate-600">L / X</kbd>
+              <span class="text-slate-300 text-[11px]">Shadow Dash</span>
+            </div>
+            <div class="flex items-center gap-2 bg-slate-950/70 px-2.5 py-1.5 rounded-lg border border-white/5">
+              <kbd class="px-1.5 py-0.5 text-[10px] font-mono-tech bg-slate-800 text-emerald-300 rounded border border-slate-600">J / C</kbd>
+              <span class="text-slate-300 text-[11px]">Shuriken</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Primary Action CTA: Explicitly "Start Game" -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <button id="btn-toggle-touch" type="button" class="px-3.5 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-white/15 text-xs font-semibold text-slate-200 transition">
+              Touch Controls: <span id="touch-mode-label" class="text-amber-400 font-bold">AUTO</span>
+            </button>
+            <button id="btn-resume-game" type="button" class="hidden px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs uppercase tracking-wider transition">
+              Resume Combat
+            </button>
+          </div>
+
+          <button id="btn-start-game" type="button" class="btn-start-game w-full sm:w-auto px-10 py-3.5 rounded-xl font-cinzel text-lg sm:text-xl font-black text-white tracking-widest uppercase flex items-center justify-center gap-3 cursor-pointer">
+            <span>Start Game</span>
+            <svg class="w-5 h-5 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- ON-SCREEN TOUCH CONTROLS FOR MOBILE / TABLET LANDSCAPE                    -->
+    <!-- ========================================================================= -->
+    <div id="touch-controls" class="fixed inset-x-0 bottom-7 z-20 pointer-events-none px-4 sm:px-8 flex items-end justify-between opacity-0 transition-opacity duration-300">
+      <!-- Left D-Pad (Move Left / Move Right) -->
+      <div class="flex items-center gap-3 pointer-events-auto">
+        <button id="touch-left" type="button" aria-label="Move Left" class="touch-btn w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-white active:scale-90">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button id="touch-right" type="button" aria-label="Move Right" class="touch-btn w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-white active:scale-90">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Right Action Cluster (Shuriken, Dash, Attack, Jump) -->
+      <div class="flex items-end gap-2.5 sm:gap-3.5 pointer-events-auto">
+        <!-- Shuriken -->
+        <button id="touch-shuriken" type="button" class="touch-btn w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center text-amber-300 border-amber-400/40">
+          <span class="text-xs font-black tracking-tighter">STAR</span>
+          <span id="touch-star-cd" class="text-[8px] font-mono-tech text-emerald-300">READY</span>
+        </button>
+
+        <!-- Dash -->
+        <button id="touch-dash" type="button" class="touch-btn w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex flex-col items-center justify-center text-cyan-300 border-cyan-400/40">
+          <span class="text-xs font-black tracking-tighter">DASH</span>
+          <span id="touch-dash-cd" class="text-[8px] font-mono-tech text-emerald-300">READY</span>
+        </button>
+
+        <!-- Sword Attack -->
+        <button id="touch-attack" type="button" class="touch-btn w-15 h-15 sm:w-16 sm:h-16 rounded-2xl flex flex-col items-center justify-center bg-red-950/70 border-red-400/60 text-rose-200 px-3 py-2">
+          <span class="text-xs sm:text-sm font-black tracking-wider">SLASH</span>
+          <span class="text-[8px] font-mono-tech text-amber-300">COMBO</span>
+        </button>
+
+        <!-- Jump / Double Jump -->
+        <button id="touch-jump" type="button" class="touch-btn w-15 h-15 sm:w-16 sm:h-16 rounded-2xl flex flex-col items-center justify-center bg-slate-900/80 border-emerald-400/50 text-emerald-300 px-3 py-2">
+          <span class="text-xs sm:text-sm font-black tracking-wider">JUMP</span>
+          <span class="text-[8px] font-mono-tech text-slate-300">2X / WALL</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- PERMANENT WATERMARK ON BOTTOM SIDE                                        -->
+    <!-- ========================================================================= -->
+    <footer class="fixed bottom-1.5 inset-x-0 z-40 pointer-events-none flex justify-center">
+      <div class="px-3.5 py-0.5 rounded-full bg-slate-950/75 border border-white/15 backdrop-blur-md shadow-lg">
+        <span class="font-mono-tech text-[11px] sm:text-xs font-semibold tracking-wider text-slate-300">
+          Developed by <span class="text-amber-400 font-bold">Koushik Ghosh</span>
+        </span>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    /**
+     * ============================================================================
+     * SHADOW OF ARASHI — ENGINE & GAMEPLAY IMPLEMENTATION
+     * Pure Vanilla JS • Hi-DPI Canvas • Object Pooled • Procedural Web Audio API
+     * ============================================================================
+     */
+
+    // --- 1. PROCEDURAL WEB AUDIO SYNTHESIZER (ZERO EXTERNAL ASSETS) ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) {
+            this.ctx = new AudioCtx();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      toggleMute() {
+        this.muted = !this.muted;
+        return this.muted;
+      }
+
+      playSlash(comboStep = 1) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Filtered white noise burst for blade whoosh
+        const bufferSize = this.ctx.sampleRate * 0.14;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.45));
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        const baseFreq = comboStep === 3 ? 950 : comboStep === 2 ? 780 : 620;
+        filter.frequency.setValueAtTime(baseFreq, now);
+        filter.frequency.exponentialRampToValueAtTime(180, now + 0.13);
+        filter.Q.value = 2.2;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.32, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.13);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+
+        // Metallic blade ring oscillator
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(baseFreq * 1.8, now);
+        osc.frequency.exponentialRampToValueAtTime(240, now + 0.11);
+        oscGain.gain.setValueAtTime(0.14, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.11);
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.12);
+      }
+
+      playHit(isCritical = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = isCritical ? 'sawtooth' : 'square';
+        osc.frequency.setValueAtTime(isCritical ? 290 : 190, now);
+        osc.frequency.exponentialRampToValueAtTime(48, now + 0.14);
+
+        gain.gain.setValueAtTime(isCritical ? 0.35 : 0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.008, now + 0.14);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      }
+
+      playJump(isDouble = false) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        const startF = isDouble ? 280 : 190;
+        const endF = isDouble ? 580 : 410;
+        osc.frequency.setValueAtTime(startF, now);
+        osc.frequency.exponentialRampToValueAtTime(endF, now + 0.12);
+
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.13);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      }
+
+      playDash() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(95, now + 0.18);
+
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.18);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      }
+
+      playShuriken() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1400, now);
+        osc.frequency.exponentialRampToValueAtTime(520, now + 0.08);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.08);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      }
+
+      playOrb() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880, now + 0.06); // A5
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.22);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.23);
+      }
+
+      playAlert() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(660, now + 0.05);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.16);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+
+      playHurt() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(65, now + 0.24);
+        gain.gain.setValueAtTime(0.32, now);
+        gain.gain.exponentialRampToValueAtTime(0.008, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.26);
+      }
+
+      playStageClear() {
+        if (this.muted || !this.ctx) return;
+        const notes = [440, 554.37, 659.25, 880];
+        notes.forEach((freq, idx) => {
+          const now = this.ctx.currentTime + idx * 0.09;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.22, now);
+          gain.gain.exponentialRampToValueAtTime(0.005, now + 0.45);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.46);
+        });
+      }
+    }
+
+    // --- 2. TIME-OF-DAY SCENARIO PALETTES (MORNING, DAY, EVENING, DAWN) ---
+    const SCENARIOS = {
+      MORNING: {
+        name: 'MORNING',
+        skyStops: ['#0f172a', '#1e3a5f', '#38bdf8', '#fde68a'],
+        celestialColor: '#fef08a',
+        celestialGlow: 'rgba(253, 224, 71, 0.32)',
+        celestialYRatio: 0.26,
+        mountainFar: '#16273d',
+        mountainMid: '#0f1d2e',
+        bambooColor: '#0b1522',
+        fogColor: 'rgba(254, 243, 199, 0.14)',
+        platformFill: '#070b12',
+        platformRim: '#38bdf8',
+        shrineGlow: '#38bdf8'
+      },
+      DAY: {
+        name: 'DAY',
+        skyStops: ['#082f49', '#0369a1', '#38bdf8', '#bae6fd'],
+        celestialColor: '#ffffff',
+        celestialGlow: 'rgba(186, 230, 253, 0.4)',
+        celestialYRatio: 0.18,
+        mountainFar: '#0c3b5e',
+        mountainMid: '#08263e',
+        bambooColor: '#051827',
+        fogColor: 'rgba(186, 230, 253, 0.16)',
+        platformFill: '#050a0f',
+        platformRim: '#22d3ee',
+        shrineGlow: '#10b981'
+      },
+      EVENING: {
+        name: 'EVENING',
+        skyStops: ['#1a091e', '#4c1d24', '#c2410c', '#f59e0b'],
+        celestialColor: '#fb923c',
+        celestialGlow: 'rgba(249, 115, 22, 0.38)',
+        celestialYRatio: 0.34,
+        mountainFar: '#2e1018',
+        mountainMid: '#1f0910',
+        bambooColor: '#120509',
+        fogColor: 'rgba(251, 146, 60, 0.15)',
+        platformFill: '#090406',
+        platformRim: '#f97316',
+        shrineGlow: '#f59e0b'
+      },
+      DAWN: {
+        name: 'DAWN',
+        skyStops: ['#090514', '#2e1045', '#831843', '#f43f5e'],
+        celestialColor: '#fda4af',
+        celestialGlow: 'rgba(244, 63, 94, 0.35)',
+        celestialYRatio: 0.28,
+        mountainFar: '#1f0d2e',
+        mountainMid: '#13071e',
+        bambooColor: '#0b0412',
+        fogColor: 'rgba(244, 63, 94, 0.14)',
+        platformFill: '#06030a',
+        platformRim: '#fb7185',
+        shrineGlow: '#f43f5e'
+      }
+    };
+
+    // --- 3. DIFFICULTY CONFIGURATIONS ---
+    const DIFFICULTIES = {
+      EASY: {
+        name: 'EASY',
+        playerMaxHp: 150,
+        enemyHpMult: 0.8,
+        enemySpeedMult: 0.82,
+        enemyDamageMult: 0.7,
+        scoreMult: 1.0
+      },
+      NORMAL: {
+        name: 'NORMAL',
+        playerMaxHp: 100,
+        enemyHpMult: 1.0,
+        enemySpeedMult: 1.0,
+        enemyDamageMult: 1.0,
+        scoreMult: 1.5
+      },
+      HARD: {
+        name: 'HARD',
+        playerMaxHp: 75,
+        enemyHpMult: 1.35,
+        enemySpeedMult: 1.22,
+        enemyDamageMult: 1.35,
+        scoreMult: 2.2
+      }
+    };
+
+    // --- 4. PRE-ALLOCATED OBJECT POOLS (ZERO GC STUTTER) ---
+    class ObjectPool {
+      constructor(createFn, size) {
+        this.pool = [];
+        for (let i = 0; i < size; i++) {
+          const item = createFn();
+          item.active = false;
+          this.pool.push(item);
+        }
+      }
+
+      acquire() {
+        for (let i = 0; i < this.pool.length; i++) {
+          if (!this.pool[i].active) {
+            this.pool[i].active = true;
+            return this.pool[i];
+          }
+        }
+        // Fallback overwrite oldest if pool saturated
+        const item = this.pool[0];
+        item.active = true;
+        return item;
+      }
+
+      clear() {
+        for (let i = 0; i < this.pool.length; i++) {
+          this.pool[i].active = false;
+        }
+      }
+    }
+
+    // --- 5. MAIN GAME ENGINE ---
+    class ArashiGame {
+      constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
+        this.sound = new SoundEngine();
+
+        // Virtual logical height for consistent framing across any aspect ratio
+        this.logicalHeight = 620;
+        this.logicalWidth = 1100;
+        this.dpr = 1;
+
+        // Game State
+        this.state = 'MENU'; // MENU, PLAYING, PAUSED, VICTORY, DEFEAT
+        this.selectedDifficulty = 'NORMAL';
+        this.selectedScenario = 'DAWN';
+        this.touchMode = 'AUTO'; // AUTO, ON, OFF
+        this.isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+        // Scoreboard & Hit Validity Telemetry
+        this.score = 0;
+        this.kills = 0;
+        this.totalEnemies = 0;
+        this.elapsedTime = 0;
+        this.totalAttackAttempts = 0;
+        this.validHitCount = 0;
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.lastHitValidityStatus = 'STANDBY';
+        this.lastHitValidityType = 'READY'; // VALID, CRIT, WHIFF, BLOCKED, READY
+
+        // Camera & Screen Shake
+        this.camera = { x: 0, y: 0 };
+        this.shakeTimer = 0;
+        this.shakeIntensity = 0;
+
+        // Input State
+        this.keys = {
+          left: false,
+          right: false,
+          jump: false,
+          jumpJustPressed: false,
+          attackJustPressed: false,
+          dashJustPressed: false,
+          shurikenJustPressed: false
+        };
+
+        // Pre-allocate Object Pools
+        this.particlePool = new ObjectPool(() => ({
+          active: false, x: 0, y: 0, vx: 0, vy: 0, size: 3, alpha: 1,
+          color: '#fff', life: 0, maxLife: 0.5, gravity: 400
+        }), 260);
+
+        this.shurikenPool = new ObjectPool(() => ({
+          active: false, x: 0, y: 0, vx: 0, vy: 0, radius: 9,
+          angle: 0, life: 0, maxLife: 1.6, hitRegistered: false
+        }), 25);
+
+        this.slashPool = new ObjectPool(() => ({
+          active: false, x: 0, y: 0, dir: 1, comboStep: 1,
+          life: 0, maxLife: 0.18, radius: 64
+        }), 12);
+
+        this.afterimagePool = new ObjectPool(() => ({
+          active: false, x: 0, y: 0, dir: 1, life: 0, maxLife: 0.24
+        }), 24);
+
+        this.floatingTextPool = new ObjectPool(() => ({
+          active: false, x: 0, y: 0, vy: -55, text: '', subtext: '',
+          color: '#fff', life: 0, maxLife: 0.85, scale: 1
+        }), 30);
+
+        // Background Procedural Elements
+        this.bgMountains = [];
+        this.bgBamboos = [];
+        this.bgPagodas = [];
+        this.fogClouds = [];
+        this.initBackgroundDecor();
+
+        // Level Entities
+        this.levelWidth = 5400;
+        this.platforms = [];
+        this.spikes = [];
+        this.saws = [];
+        this.orbs = [];
+        this.enemies = [];
+        this.shrine = { x: 5120, y: 420, width: 110, height: 150 };
+
+        // Player Entity
+        this.player = this.createDefaultPlayer();
+
+        // Bindings
+        this.handleResize = this.handleResize.bind(this);
+        this.loop = this.loop.bind(this);
+
+        this.setupEventListeners();
+        this.handleResize();
+        this.buildLevel();
+        this.updateTouchVisibility();
+
+        this.lastFrameTime = performance.now();
+        requestAnimationFrame(this.loop);
+      }
+
+      createDefaultPlayer() {
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+        return {
+          x: 140,
+          y: 360,
+          width: 30,
+          height: 54,
+          vx: 0,
+          vy: 0,
+          dir: 1,
+          hp: diff.playerMaxHp,
+          maxHp: diff.playerMaxHp,
+          onGround: false,
+          onWall: 0, // -1 left wall, 1 right wall, 0 none
+          jumpsLeft: 2,
+          // Dash (1.5s cooldown)
+          dashCooldown: 0,
+          dashMaxCooldown: 1.5,
+          dashTimer: 0,
+          dashDuration: 0.19,
+          // Melee 3-Hit Combo
+          attackCooldown: 0,
+          attackMaxCooldown: 0.22,
+          comboStep: 0,
+          comboWindowTimer: 0,
+          // Shuriken
+          shurikenCooldown: 0,
+          shurikenMaxCooldown: 0.45,
+          // Invulnerability & Animation
+          invulnTimer: 0,
+          runAnimTime: 0,
+          scarfNodes: Array.from({ length: 7 }, () => ({ x: 140, y: 370 }))
+        };
+      }
+
+      initBackgroundDecor() {
+        // Mountains
+        this.bgMountains = [];
+        for (let i = 0; i < 18; i++) {
+          this.bgMountains.push({
+            x: i * 380 - 200,
+            width: 480 + (i % 3) * 140,
+            height: 220 + ((i * 73) % 160),
+            layer: i % 2 // 0 far, 1 mid
+          });
+        }
+
+        // Bamboo stalks
+        this.bgBamboos = [];
+        for (let i = 0; i < 65; i++) {
+          this.bgBamboos.push({
+            x: i * 115 + ((i * 37) % 45),
+            width: 7 + (i % 4) * 3,
+            lean: ((i % 5) - 2) * 0.03,
+            segments: 6 + (i % 4)
+          });
+        }
+
+        // Pagoda silhouettes
+        this.bgPagodas = [
+          { x: 650, y: 350, tiers: 3, scale: 0.85 },
+          { x: 1950, y: 310, tiers: 4, scale: 1.0 },
+          { x: 3400, y: 340, tiers: 3, scale: 0.9 },
+          { x: 4650, y: 295, tiers: 5, scale: 1.1 }
+        ];
+
+        // Volumetric Fog Layers
+        this.fogClouds = [];
+        for (let i = 0; i < 16; i++) {
+          this.fogClouds.push({
+            x: i * 400,
+            y: 360 + (i % 3) * 65,
+            width: 520 + (i % 4) * 120,
+            height: 75 + (i % 2) * 30,
+            speed: 12 + (i % 3) * 8
+          });
+        }
+      }
+
+      // --- 6. LEVEL CONSTRUCTION ---
+      buildLevel() {
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+        this.platforms = [];
+        this.spikes = [];
+        this.saws = [];
+        this.orbs = [];
+        this.enemies = [];
+
+        // Ground & Multi-tiered Ninja Platforming Sections
+        const platDefs = [
+          // Section 1: Bamboo Courtyard Start
+          { x: -120, y: 500, w: 820, h: 200 },
+          { x: 420, y: 390, w: 190, h: 26 },
+          { x: 760, y: 450, w: 480, h: 220 },
+          { x: 930, y: 330, w: 200, h: 24 },
+
+          // Section 2: Wall-Jump Chimney & Saw Gorge
+          { x: 1320, y: 230, w: 48, h: 380, isWall: true },
+          { x: 1520, y: 160, w: 48, h: 350, isWall: true },
+          { x: 1520, y: 470, w: 680, h: 200 },
+          { x: 1730, y: 345, w: 250, h: 24 },
+
+          // Section 3: High Pagoda Rooftops & Spear Bridge
+          { x: 2280, y: 420, w: 540, h: 240 },
+          { x: 2450, y: 285, w: 220, h: 24 },
+          { x: 2760, y: 215, w: 190, h: 24 },
+          { x: 2910, y: 490, w: 720, h: 190 },
+
+          // Section 4: Twin Saw Blade Gauntlet & Wall Climb
+          { x: 3710, y: 430, w: 480, h: 230 },
+          { x: 3920, y: 295, w: 210, h: 24 },
+          { x: 4260, y: 200, w: 50, h: 360, isWall: true },
+          { x: 4440, y: 140, w: 50, h: 320, isWall: true },
+
+          // Section 5: Final Torii Sanctuary Approach
+          { x: 4440, y: 460, w: 980, h: 220 },
+          { x: 4660, y: 340, w: 220, h: 24 }
+        ];
+
+        platDefs.forEach(p => {
+          this.platforms.push({
+            x: p.x, y: p.y, width: p.w, height: p.h, isWall: !!p.isWall
+          });
+        });
+
+        // Deadly Ground Spikes
+        const spikeDefs = [
+          { x: 960, y: 450, width: 90 },
+          { x: 1690, y: 470, width: 110 },
+          { x: 1960, y: 470, width: 90 },
+          { x: 3140, y: 490, width: 120 },
+          { x: 3420, y: 490, width: 110 },
+          { x: 3880, y: 430, width: 95 }
+        ];
+        this.spikes = spikeDefs;
+
+        // Rotating & Moving Saw Blades
+        const sawDefs = [
+          { x1: 1020, y1: 325, x2: 1120, y2: 325, radius: 26, speed: 1.8 },
+          { x1: 1750, y1: 340, x2: 1960, y2: 340, radius: 28, speed: 2.3 },
+          { x1: 2350, y1: 415, x2: 2620, y2: 415, radius: 30, speed: 2.1 },
+          { x1: 3020, y1: 395, x2: 3320, y2: 395, radius: 32, speed: 2.5 },
+          { x1: 4000, y1: 425, x2: 4160, y2: 425, radius: 28, speed: 2.6 },
+          { x1: 4720, y1: 455, x2: 4960, y2: 455, radius: 30, speed: 2.4 }
+        ];
+        this.saws = sawDefs.map(s => ({
+          ...s,
+          x: s.x1,
+          y: s.y1,
+          t: Math.random() * Math.PI * 2,
+          angle: 0
+        }));
+
+        // Collectible Golden Spirit Orbs
+        const orbCoords = [
+          [480, 345], [540, 345], [1000, 285], [1060, 285],
+          [1420, 270], [1420, 210], [1820, 295], [1880, 295],
+          [2530, 240], [2830, 170], [3200, 420], [3480, 420],
+          [4000, 250], [4350, 230], [4350, 170], [4770, 290]
+        ];
+        this.orbs = orbCoords.map(([x, y]) => ({
+          x, y, radius: 10, collected: false, bobOffset: Math.random() * Math.PI * 2
+        }));
+
+        // Enemies: Sword Patrol Guards ('SWORD') & Long-Reach Spear Ashigaru ('SPEAR')
+        const enemyDefs = [
+          { x: 560, y: 446, minX: 430, maxX: 670, type: 'SWORD' },
+          { x: 860, y: 396, minX: 780, maxX: 940, type: 'SWORD' },
+          { x: 1140, y: 396, minX: 1060, maxX: 1220, type: 'SPEAR' },
+          { x: 1620, y: 416, minX: 1540, maxX: 1675, type: 'SWORD' },
+          { x: 1850, y: 291, minX: 1745, maxX: 1960, type: 'SPEAR' },
+          { x: 2100, y: 416, minX: 2060, maxX: 2180, type: 'SWORD' },
+          { x: 2540, y: 231, minX: 2465, maxX: 2650, type: 'SWORD' },
+          { x: 2700, y: 366, minX: 2630, maxX: 2800, type: 'SPEAR' },
+          { x: 3030, y: 436, minX: 2930, maxX: 3120, type: 'SWORD' },
+          { x: 3310, y: 436, minX: 3270, maxX: 3400, type: 'SPEAR' },
+          { x: 3790, y: 376, minX: 3725, maxX: 3865, type: 'SWORD' },
+          { x: 4620, y: 406, minX: 4480, maxX: 4700, type: 'SPEAR' },
+          { x: 5020, y: 406, minX: 4975, maxX: 5090, type: 'SWORD' }
+        ];
+
+        this.enemies = enemyDefs.map(e => {
+          const baseHp = e.type === 'SPEAR' ? 95 : 70;
+          const maxHp = Math.round(baseHp * diff.enemyHpMult);
+          return {
+            x: e.x,
+            y: e.y,
+            width: 32,
+            height: 54,
+            vx: 0,
+            vy: 0,
+            dir: -1,
+            type: e.type,
+            minX: e.minX,
+            maxX: e.maxX,
+            hp: maxHp,
+            maxHp: maxHp,
+            state: 'PATROL', // PATROL, ALERT, CHARGE, ATTACK, STUNNED
+            stateTimer: 0,
+            attackCooldown: 0,
+            alertDisplayTimer: 0,
+            hitFlashTimer: 0,
+            dead: false
+          };
+        });
+
+        this.totalEnemies = this.enemies.length;
+        this.shrine = { x: 5210, y: 310, width: 130, height: 150 };
+      }
+
+      // --- 7. RESPONSIVE HI-DPI CANVAS & EVENT LISTENERS ---
+      handleResize() {
+        this.dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+
+        this.canvas.width = Math.floor(w * this.dpr);
+        this.canvas.height = Math.floor(h * this.dpr);
+
+        const aspect = w / Math.max(h, 1);
+        this.logicalHeight = 620;
+        this.logicalWidth = Math.max(820, Math.round(this.logicalHeight * aspect));
+      }
+
+      setupEventListeners() {
+        window.addEventListener('resize', this.handleResize);
+
+        // Portrait dismiss button
+        document.getElementById('btn-dismiss-portrait').addEventListener('click', () => {
+          document.getElementById('portrait-overlay').classList.add('dismissed');
+        });
+
+        // Keyboard Input
+        window.addEventListener('keydown', (e) => {
+          if (e.repeat) return;
+          const code = e.code;
+          if (code === 'KeyA' || code === 'ArrowLeft') this.keys.left = true;
+          if (code === 'KeyD' || code === 'ArrowRight') this.keys.right = true;
+          if (code === 'KeyW' || code === 'ArrowUp' || code === 'Space') {
+            this.keys.jump = true;
+            this.keys.jumpJustPressed = true;
+          }
+          if (code === 'KeyK' || code === 'KeyZ') this.keys.attackJustPressed = true;
+          if (code === 'KeyL' || code === 'KeyX' || code === 'ShiftLeft' || code === 'ShiftRight') {
+            this.keys.dashJustPressed = true;
+          }
+          if (code === 'KeyJ' || code === 'KeyC') this.keys.shurikenJustPressed = true;
+          if (code === 'KeyP' || code === 'Escape') {
+            if (this.state === 'PLAYING') this.pauseGame();
+            else if (this.state === 'PAUSED') this.resumeGame();
+          }
+        });
+
+        window.addEventListener('keyup', (e) => {
+          const code = e.code;
+          if (code === 'KeyA' || code === 'ArrowLeft') this.keys.left = false;
+          if (code === 'KeyD' || code === 'ArrowRight') this.keys.right = false;
+          if (code === 'KeyW' || code === 'ArrowUp' || code === 'Space') this.keys.jump = false;
+        });
+
+        // Menu Difficulty Selector
+        const diffButtons = document.querySelectorAll('#difficulty-selector [data-diff]');
+        diffButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            diffButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.selectedDifficulty = btn.getAttribute('data-diff');
+            document.getElementById('selected-diff-label').textContent = this.selectedDifficulty;
+          });
+        });
+
+        // Menu Scenario Selector
+        const scenarioButtons = document.querySelectorAll('#scenario-selector [data-scenario]');
+        scenarioButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            scenarioButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            this.selectedScenario = btn.getAttribute('data-scenario');
+            document.getElementById('selected-scenario-label').textContent = this.selectedScenario;
+          });
+        });
+
+        // Start Game CTA
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+          this.sound.init();
+          this.startNewGame();
+        });
+
+        // Resume Game CTA
+        document.getElementById('btn-resume-game').addEventListener('click', () => {
+          this.sound.init();
+          this.resumeGame();
+        });
+
+        // Pause & Mute HUD Buttons
+        document.getElementById('btn-pause').addEventListener('click', () => {
+          if (this.state === 'PLAYING') this.pauseGame();
+        });
+
+        document.getElementById('btn-mute').addEventListener('click', () => {
+          this.sound.init();
+          const muted = this.sound.toggleMute();
+          document.getElementById('icon-sound-on').classList.toggle('hidden', muted);
+          document.getElementById('icon-sound-off').classList.toggle('hidden', !muted);
+        });
+
+        // Touch Controls Toggle
+        document.getElementById('btn-toggle-touch').addEventListener('click', () => {
+          const modes = ['AUTO', 'ON', 'OFF'];
+          const nextIdx = (modes.indexOf(this.touchMode) + 1) % modes.length;
+          this.touchMode = modes[nextIdx];
+          document.getElementById('touch-mode-label').textContent = this.touchMode;
+          this.updateTouchVisibility();
+        });
+
+        // Bind On-Screen Touch Buttons
+        this.bindTouchButton('touch-left',
+          () => { this.keys.left = true; },
+          () => { this.keys.left = false; }
+        );
+        this.bindTouchButton('touch-right',
+          () => { this.keys.right = true; },
+          () => { this.keys.right = false; }
+        );
+        this.bindTouchButton('touch-jump',
+          () => { this.keys.jump = true; this.keys.jumpJustPressed = true; },
+          () => { this.keys.jump = false; }
+        );
+        this.bindTouchButton('touch-attack',
+          () => { this.keys.attackJustPressed = true; },
+          () => {}
+        );
+        this.bindTouchButton('touch-dash',
+          () => { this.keys.dashJustPressed = true; },
+          () => {}
+        );
+        this.bindTouchButton('touch-shuriken',
+          () => { this.keys.shurikenJustPressed = true; },
+          () => {}
+        );
+      }
+
+      bindTouchButton(id, onDown, onUp) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const handleStart = (e) => {
+          e.preventDefault();
+          this.sound.init();
+          el.classList.add('pressed');
+          onDown();
+        };
+        const handleEnd = (e) => {
+          e.preventDefault();
+          el.classList.remove('pressed');
+          onUp();
+        };
+        el.addEventListener('touchstart', handleStart, { passive: false });
+        el.addEventListener('touchend', handleEnd, { passive: false });
+        el.addEventListener('touchcancel', handleEnd, { passive: false });
+        el.addEventListener('mousedown', handleStart);
+        el.addEventListener('mouseup', handleEnd);
+        el.addEventListener('mouseleave', handleEnd);
+      }
+
+      updateTouchVisibility() {
+        const touchRoot = document.getElementById('touch-controls');
+        const shouldShow = this.state === 'PLAYING' && (
+          this.touchMode === 'ON' ||
+          (this.touchMode === 'AUTO' && (this.isTouchDevice || window.innerWidth < 1024))
+        );
+        touchRoot.style.opacity = shouldShow ? '1' : '0';
+        touchRoot.style.pointerEvents = shouldShow ? 'auto' : 'none';
+      }
+
+      // --- 8. GAME FLOW MANAGEMENT ---
+      startNewGame() {
+        this.score = 0;
+        this.kills = 0;
+        this.elapsedTime = 0;
+        this.totalAttackAttempts = 0;
+        this.validHitCount = 0;
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.lastHitValidityStatus = 'READY • VALID';
+        this.lastHitValidityType = 'READY';
+
+        this.particlePool.clear();
+        this.shurikenPool.clear();
+        this.slashPool.clear();
+        this.afterimagePool.clear();
+        this.floatingTextPool.clear();
+
+        this.player = this.createDefaultPlayer();
+        this.buildLevel();
+
+        this.camera.x = 0;
+        this.camera.y = 0;
+        this.state = 'PLAYING';
+
+        document.getElementById('menu-overlay').classList.add('opacity-0', 'pointer-events-none');
+        document.getElementById('hud-root').classList.remove('opacity-0');
+        document.getElementById('btn-resume-game').classList.remove('hidden');
+
+        this.updateTouchVisibility();
+        this.updateScoreboardDOM();
+      }
+
+      pauseGame() {
+        this.state = 'PAUSED';
+        document.getElementById('menu-title').textContent = 'SHADOW PAUSED';
+        document.getElementById('menu-subtitle').textContent = 'Adjust atmosphere or resume your mission at any moment.';
+        document.getElementById('menu-run-summary').classList.add('hidden');
+        document.getElementById('btn-resume-game').classList.remove('hidden');
+        document.getElementById('menu-overlay').classList.remove('opacity-0', 'pointer-events-none');
+        this.updateTouchVisibility();
+      }
+
+      resumeGame() {
+        this.state = 'PLAYING';
+        document.getElementById('menu-overlay').classList.add('opacity-0', 'pointer-events-none');
+        this.updateTouchVisibility();
+      }
+
+      finishGame(isVictory) {
+        this.state = isVictory ? 'VICTORY' : 'DEFEAT';
+        if (isVictory) {
+          this.sound.playStageClear();
+          const diff = DIFFICULTIES[this.selectedDifficulty];
+          this.score += Math.round(1500 * diff.scoreMult);
+        } else {
+          this.sound.playHurt();
+        }
+
+        const titleEl = document.getElementById('menu-title');
+        const subEl = document.getElementById('menu-subtitle');
+        const summaryEl = document.getElementById('menu-run-summary');
+        const bannerTitle = document.getElementById('summary-banner-title');
+
+        titleEl.textContent = isVictory ? 'SHRINE PURIFIED — VICTORY' : 'FALLEN IN SHADOW';
+        subEl.textContent = isVictory
+          ? 'Your blade struck true. Try a higher difficulty or a new Time-of-Day scenario!'
+          : 'Even the greatest shinobi learns from defeat. Press Start Game to rise again.';
+        bannerTitle.textContent = isVictory ? 'STAGE CLEAR TELEMETRY REPORT' : 'COMBAT TELEMETRY REPORT';
+
+        const acc = this.totalAttackAttempts > 0
+          ? Math.min(100, Math.round((this.validHitCount / this.totalAttackAttempts) * 100))
+          : 100;
+
+        document.getElementById('summary-score').textContent = String(this.score).padStart(5, '0');
+        document.getElementById('summary-accuracy').textContent = `${this.validHitCount} (${acc}%)`;
+        document.getElementById('summary-kills').textContent = `${this.kills} / ${this.totalEnemies}`;
+        document.getElementById('summary-time').textContent = this.formatTime(this.elapsedTime);
+
+        summaryEl.classList.remove('hidden');
+        document.getElementById('btn-resume-game').classList.add('hidden');
+        document.getElementById('menu-overlay').classList.remove('opacity-0', 'pointer-events-none');
+        this.updateTouchVisibility();
+        this.updateScoreboardDOM();
+      }
+
+      formatTime(sec) {
+        const mins = Math.floor(sec / 60);
+        const rem = Math.floor(sec % 60);
+        return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+      }
+
+      // --- 9. HIT VALIDITY & FLOATING FEEDBACK TELEMETRY ---
+      recordHitValidity(type, label, x, y, sublabel = '') {
+        this.lastHitValidityType = type;
+        this.lastHitValidityStatus = label;
+
+        let color = '#10b981';
+        if (type === 'CRIT') color = '#f59e0b';
+        else if (type === 'WHIFF') color = '#94a3b8';
+        else if (type === 'HURT') color = '#ef4444';
+
+        const ft = this.floatingTextPool.acquire();
+        ft.x = x;
+        ft.y = y;
+        ft.vy = -65;
+        ft.text = label;
+        ft.subtext = sublabel;
+        ft.color = color;
+        ft.life = 0;
+        ft.maxLife = 0.85;
+        ft.scale = type === 'CRIT' ? 1.22 : 1.0;
+      }
+
+      spawnParticles(x, y, count, color, speed = 180, size = 3.5, gravity = 380) {
+        for (let i = 0; i < count; i++) {
+          const p = this.particlePool.acquire();
+          const angle = Math.random() * Math.PI * 2;
+          const spd = (0.3 + Math.random() * 0.7) * speed;
+          p.x = x;
+          p.y = y;
+          p.vx = Math.cos(angle) * spd;
+          p.vy = Math.sin(angle) * spd - 40;
+          p.size = size * (0.6 + Math.random() * 0.7);
+          p.color = color;
+          p.life = 0;
+          p.maxLife = 0.25 + Math.random() * 0.35;
+          p.gravity = gravity;
+        }
+      }
+
+      triggerShake(intensity = 6, duration = 0.14) {
+        this.shakeIntensity = Math.max(this.shakeIntensity, intensity);
+        this.shakeTimer = Math.max(this.shakeTimer, duration);
+      }
+
+      // --- 10. PHYSICS & GAMEPLAY UPDATE (DELTA TIME CLAMPED) ---
+      update(dt) {
+        // Animate ambient fog even on menu
+        for (let i = 0; i < this.fogClouds.length; i++) {
+          const f = this.fogClouds[i];
+          f.x -= f.speed * dt;
+          if (f.x + f.width < this.camera.x - 300) {
+            f.x = this.camera.x + this.logicalWidth + 200;
+          }
+        }
+
+        if (this.state !== 'PLAYING') {
+          this.resetJustPressedKeys();
+          return;
+        }
+
+        this.elapsedTime += dt;
+
+        // Combo decay
+        if (this.comboTimer > 0) {
+          this.comboTimer -= dt;
+          if (this.comboTimer <= 0) {
+            this.comboCount = 0;
+          }
+        }
+
+        // Screen shake decay
+        if (this.shakeTimer > 0) {
+          this.shakeTimer -= dt;
+          if (this.shakeTimer <= 0) this.shakeIntensity = 0;
+        }
+
+        this.updatePlayer(dt);
+        this.updateShurikens(dt);
+        this.updateSlashes(dt);
+        this.updateEnemies(dt);
+        this.updateHazardsAndOrbs(dt);
+        this.updatePools(dt);
+        this.updateCamera(dt);
+        this.updateScoreboardDOM();
+        this.resetJustPressedKeys();
+      }
+
+      resetJustPressedKeys() {
+        this.keys.jumpJustPressed = false;
+        this.keys.attackJustPressed = false;
+        this.keys.dashJustPressed = false;
+        this.keys.shurikenJustPressed = false;
+      }
+
+      updatePlayer(dt) {
+        const p = this.player;
+
+        // Cooldown timers
+        if (p.dashCooldown > 0) p.dashCooldown = Math.max(0, p.dashCooldown - dt);
+        if (p.attackCooldown > 0) p.attackCooldown = Math.max(0, p.attackCooldown - dt);
+        if (p.shurikenCooldown > 0) p.shurikenCooldown = Math.max(0, p.shurikenCooldown - dt);
+        if (p.invulnTimer > 0) p.invulnTimer = Math.max(0, p.invulnTimer - dt);
+        if (p.comboWindowTimer > 0) {
+          p.comboWindowTimer -= dt;
+          if (p.comboWindowTimer <= 0) p.comboStep = 0;
+        }
+
+        // 1. Trigger Shadow Dash (L / X) — 1.5s Cooldown
+        if (this.keys.dashJustPressed && p.dashCooldown <= 0 && p.dashTimer <= 0) {
+          p.dashTimer = p.dashDuration;
+          p.dashCooldown = p.dashMaxCooldown; // 1.5s
+          p.invulnTimer = Math.max(p.invulnTimer, p.dashDuration + 0.08);
+          p.vy = 0;
+          p.vx = p.dir * 860;
+          this.sound.playDash();
+          this.spawnParticles(p.x + p.width / 2, p.y + p.height / 2, 14, '#38bdf8', 220, 4, 0);
+        }
+
+        // Active Dash State
+        if (p.dashTimer > 0) {
+          p.dashTimer -= dt;
+          p.vx = p.dir * 860;
+          p.vy = 0;
+
+          // Spawn dash silhouette afterimage
+          const ghost = this.afterimagePool.acquire();
+          ghost.x = p.x;
+          ghost.y = p.y;
+          ghost.dir = p.dir;
+          ghost.life = 0;
+          ghost.maxLife = 0.22;
+
+          // Dash slice damage through enemies
+          this.checkDashEnemyHit(p);
+        } else {
+          // Horizontal Smooth Acceleration / Deceleration
+          const moveInput = (this.keys.right ? 1 : 0) - (this.keys.left ? 1 : 0);
+          const maxSpeed = 355;
+          const accel = p.onGround ? 2600 : 1850;
+          const friction = p.onGround ? 2400 : 950;
+
+          if (moveInput !== 0) {
+            p.dir = moveInput;
+            p.vx += moveInput * accel * dt;
+            if (Math.abs(p.vx) > maxSpeed) p.vx = moveInput * maxSpeed;
+            if (p.onGround) p.runAnimTime += dt * 14;
+          } else {
+            if (Math.abs(p.vx) <= friction * dt) {
+              p.vx = 0;
+            } else {
+              p.vx -= Math.sign(p.vx) * friction * dt;
+            }
+          }
+
+          // Gravity & Wall Cling / Slide
+          const gravity = 1520;
+          p.vy += gravity * dt;
+
+          if (p.onWall !== 0 && !p.onGround && p.vy > 0) {
+            // Smooth Wall Slide cap + friction sparks
+            p.vy = Math.min(p.vy, 145);
+            if (Math.random() < 0.45) {
+              const wallX = p.onWall === 1 ? p.x + p.width : p.x;
+              this.spawnParticles(wallX, p.y + 24, 1, '#cbd5e1', 55, 2.5, 120);
+            }
+          } else {
+            p.vy = Math.min(p.vy, 920);
+          }
+        }
+
+        // 2. Jump / Double Jump / Wall Jump (W / Up / Space)
+        if (this.keys.jumpJustPressed) {
+          if (p.onGround) {
+            p.vy = -565;
+            p.onGround = false;
+            p.jumpsLeft = 1;
+            this.sound.playJump(false);
+            this.spawnParticles(p.x + p.width / 2, p.y + p.height, 9, '#e2e8f0', 130, 3.5, 200);
+          } else if (p.onWall !== 0) {
+            // Wall Jump launch
+            p.vy = -545;
+            p.vx = -p.onWall * 410;
+            p.dir = -p.onWall;
+            p.onWall = 0;
+            p.jumpsLeft = 1;
+            this.sound.playJump(true);
+            this.spawnParticles(p.x + p.width / 2, p.y + p.height / 2, 11, '#38bdf8', 160, 3.5, 200);
+          } else if (p.jumpsLeft > 0) {
+            // Mid-air Double Jump
+            p.vy = -525;
+            p.jumpsLeft = 0;
+            this.sound.playJump(true);
+            this.spawnParticles(p.x + p.width / 2, p.y + p.height, 12, '#f59e0b', 165, 3.5, 160);
+          }
+        }
+
+        // 3. Melee 3-Hit Katana Combo (K / Z)
+        if (this.keys.attackJustPressed && p.attackCooldown <= 0) {
+          this.performSwordAttack();
+        }
+
+        // 4. Shuriken Ranged Throw (J / C)
+        if (this.keys.shurikenJustPressed && p.shurikenCooldown <= 0) {
+          this.performShurikenThrow();
+        }
+
+        // Apply Horizontal Movement & Collisions
+        p.x += p.vx * dt;
+        if (p.x < 0) { p.x = 0; p.vx = 0; }
+        p.onWall = 0;
+
+        for (let i = 0; i < this.platforms.length; i++) {
+          const plat = this.platforms[i];
+          if (this.rectOverlap(p.x, p.y, p.width, p.height, plat.x, plat.y, plat.width, plat.height)) {
+            if (p.vx > 0) {
+              p.x = plat.x - p.width;
+              p.vx = 0;
+              p.onWall = 1;
+            } else if (p.vx < 0) {
+              p.x = plat.x + plat.width;
+              p.vx = 0;
+              p.onWall = -1;
+            }
+          }
+        }
+
+        // Apply Vertical Movement & Collisions
+        const wasOnGround = p.onGround;
+        p.y += p.vy * dt;
+        p.onGround = false;
+
+        for (let i = 0; i < this.platforms.length; i++) {
+          const plat = this.platforms[i];
+          if (this.rectOverlap(p.x, p.y, p.width, p.height, plat.x, plat.y, plat.width, plat.height)) {
+            if (p.vy > 0) {
+              p.y = plat.y - p.height;
+              p.vy = 0;
+              p.onGround = true;
+              p.jumpsLeft = 2;
+              if (!wasOnGround) {
+                this.spawnParticles(p.x + p.width / 2, p.y + p.height, 6, '#94a3b8', 95, 2.8, 220);
+              }
+            } else if (p.vy < 0) {
+              p.y = plat.y + plat.height;
+              p.vy = 0;
+            }
+          }
+        }
+
+        // Pitfall Check
+        if (p.y > this.logicalHeight + 180) {
+          p.hp = 0;
+          this.finishGame(false);
+          return;
+        }
+
+        // Update Flowing Ninja Scarf Physics
+        const headX = p.x + p.width / 2 - p.dir * 6;
+        const headY = p.y + 13;
+        p.scarfNodes[0].x = headX;
+        p.scarfNodes[0].y = headY;
+        for (let i = 1; i < p.scarfNodes.length; i++) {
+          const prev = p.scarfNodes[i - 1];
+          const curr = p.scarfNodes[i];
+          const targetX = prev.x - p.dir * 8 - (p.vx * 0.015);
+          const targetY = prev.y + Math.sin(this.elapsedTime * 12 + i * 0.9) * 2.5 - (p.vy * 0.008);
+          curr.x += (targetX - curr.x) * Math.min(1, dt * 22);
+          curr.y += (targetY - curr.y) * Math.min(1, dt * 22);
+        }
+
+        // Check Stage Clear Torii Shrine
+        if (this.rectOverlap(p.x, p.y, p.width, p.height, this.shrine.x, this.shrine.y, this.shrine.width, this.shrine.height)) {
+          this.finishGame(true);
+        }
+      }
+
+      performSwordAttack() {
+        const p = this.player;
+        p.comboStep = (p.comboStep % 3) + 1;
+        p.comboWindowTimer = 0.75;
+        p.attackCooldown = p.comboStep === 3 ? 0.32 : p.attackMaxCooldown;
+
+        // Forward combat lunge
+        p.vx = p.dir * (p.comboStep === 3 ? 310 : 190);
+        this.sound.playSlash(p.comboStep);
+        this.totalAttackAttempts++;
+
+        // Spawn Visual Crescent Slash Trail
+        const slash = this.slashPool.acquire();
+        slash.x = p.x + p.width / 2 + p.dir * 26;
+        slash.y = p.y + p.height / 2;
+        slash.dir = p.dir;
+        slash.comboStep = p.comboStep;
+        slash.radius = p.comboStep === 3 ? 78 : 62;
+        slash.life = 0;
+        slash.maxLife = p.comboStep === 3 ? 0.22 : 0.16;
+
+        // Evaluate Arc Hitbox against Enemies
+        const reach = p.comboStep === 3 ? 96 : 76;
+        const hitX = p.dir === 1 ? p.x + p.width / 2 : p.x + p.width / 2 - reach;
+        const hitY = p.y - 14;
+        const hitW = reach;
+        const hitH = p.height + 26;
+
+        let hitAny = false;
+        const baseDmg = p.comboStep === 3 ? 52 : p.comboStep === 2 ? 34 : 26;
+        const isCrit = p.comboStep === 3;
+
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          if (e.dead) continue;
+          if (this.rectOverlap(hitX, hitY, hitW, hitH, e.x, e.y, e.width, e.height)) {
+            hitAny = true;
+            this.damageEnemy(e, baseDmg, p.dir, isCrit, isCrit ? 'CRITICAL SLASH' : 'VALID HIT');
+          }
+        }
+
+        if (!hitAny) {
+          this.recordHitValidity('WHIFF', 'MISSED • WHIFF', slash.x, slash.y - 22, 'NO TARGET');
+        }
+      }
+
+      performShurikenThrow() {
+        const p = this.player;
+        p.shurikenCooldown = p.shurikenMaxCooldown;
+        this.sound.playShuriken();
+        this.totalAttackAttempts++;
+
+        const s = this.shurikenPool.acquire();
+        s.x = p.x + p.width / 2 + p.dir * 18;
+        s.y = p.y + 22;
+        s.vx = p.dir * 760;
+        s.vy = 0;
+        s.angle = 0;
+        s.life = 0;
+        s.maxLife = 1.35;
+        s.hitRegistered = false;
+      }
+
+      checkDashEnemyHit(p) {
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          if (e.dead || e.hitFlashTimer > 0) continue;
+          if (this.rectOverlap(p.x - 8, p.y, p.width + 16, p.height, e.x, e.y, e.width, e.height)) {
+            this.totalAttackAttempts++;
+            this.damageEnemy(e, 30, p.dir, false, 'SHADOW STRIKE');
+          }
+        }
+      }
+
+      damageEnemy(e, dmg, knockDir, isCrit, validityLabel) {
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+        e.hp -= dmg;
+        e.vx = knockDir * (isCrit ? 320 : 210);
+        e.vy = -150;
+        e.state = 'STUNNED';
+        e.stateTimer = 0.28;
+        e.hitFlashTimer = 0.16;
+
+        this.validHitCount++;
+        this.comboCount++;
+        this.comboTimer = 3.2;
+
+        const mult = Math.min(5.0, 1 + Math.floor(this.comboCount / 2) * 0.5);
+        const pts = Math.round((isCrit ? 120 : 65) * mult * diff.scoreMult);
+        this.score += pts;
+
+        this.sound.playHit(isCrit);
+        this.triggerShake(isCrit ? 8 : 4.5, 0.12);
+
+        // Blood & metallic spark particles
+        this.spawnParticles(e.x + e.width / 2, e.y + 24, isCrit ? 20 : 12, '#ef4444', 240, 4, 420);
+        this.spawnParticles(e.x + e.width / 2, e.y + 20, 6, '#fde047', 280, 2.5, 180);
+
+        this.recordHitValidity(
+          isCrit ? 'CRIT' : 'VALID',
+          validityLabel,
+          e.x + e.width / 2,
+          e.y - 12,
+          `-${dmg} HP • x${mult.toFixed(1)}`
+        );
+
+        if (e.hp <= 0) {
+          e.dead = true;
+          this.kills++;
+          const killBonus = Math.round(250 * diff.scoreMult);
+          this.score += killBonus;
+          this.spawnParticles(e.x + e.width / 2, e.y + e.height / 2, 26, '#dc2626', 290, 4.8, 360);
+          this.recordHitValidity('CRIT', 'LETHAL VALIDITY', e.x + e.width / 2, e.y - 30, `+${killBonus} PTS`);
+        }
+      }
+
+      damagePlayer(rawAmount, knockDir, hazardLabel = 'ENEMY HIT') {
+        const p = this.player;
+        if (p.invulnTimer > 0 || this.state !== 'PLAYING') return;
+
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+        const dmg = Math.max(8, Math.round(rawAmount * diff.enemyDamageMult));
+        p.hp = Math.max(0, p.hp - dmg);
+        p.invulnTimer = 0.95;
+        p.vx = knockDir * 310;
+        p.vy = -310;
+        this.comboCount = 0;
+
+        this.sound.playHurt();
+        this.triggerShake(11, 0.22);
+        this.spawnParticles(p.x + p.width / 2, p.y + p.height / 2, 18, '#ef4444', 250, 4.2, 380);
+        this.recordHitValidity('HURT', hazardLabel, p.x + p.width / 2, p.y - 14, `-${dmg} HP`);
+
+        if (p.hp <= 0) {
+          this.finishGame(false);
+        }
+      }
+
+      updateShurikens(dt) {
+        for (let i = 0; i < this.shurikenPool.pool.length; i++) {
+          const s = this.shurikenPool.pool[i];
+          if (!s.active) continue;
+
+          s.x += s.vx * dt;
+          s.angle += 24 * dt;
+          s.life += dt;
+
+          // Check platform/wall collision
+          let hitWall = false;
+          for (let j = 0; j < this.platforms.length; j++) {
+            const plat = this.platforms[j];
+            if (this.rectOverlap(s.x - s.radius, s.y - s.radius, s.radius * 2, s.radius * 2, plat.x, plat.y, plat.width, plat.height)) {
+              hitWall = true;
+              break;
+            }
+          }
+
+          if (hitWall) {
+            this.spawnParticles(s.x, s.y, 7, '#fde047', 160, 2.5, 250);
+            if (!s.hitRegistered) {
+              this.recordHitValidity('WHIFF', 'BLOCKED • WALL', s.x, s.y - 12, 'DEFLECTED');
+            }
+            s.active = false;
+            continue;
+          }
+
+          // Check enemy hit
+          for (let j = 0; j < this.enemies.length; j++) {
+            const e = this.enemies[j];
+            if (e.dead) continue;
+            if (this.rectOverlap(s.x - s.radius, s.y - s.radius, s.radius * 2, s.radius * 2, e.x, e.y, e.width, e.height)) {
+              s.hitRegistered = true;
+              s.active = false;
+              this.damageEnemy(e, 28, Math.sign(s.vx), false, 'SHURIKEN VALID');
+              break;
+            }
+          }
+
+          if (s.life >= s.maxLife) {
+            if (!s.hitRegistered) {
+              this.recordHitValidity('WHIFF', 'MISSED • RANGE', s.x, s.y - 10);
+            }
+            s.active = false;
+          }
+        }
+      }
+
+      updateSlashes(dt) {
+        for (let i = 0; i < this.slashPool.pool.length; i++) {
+          const sl = this.slashPool.pool[i];
+          if (!sl.active) continue;
+          sl.life += dt;
+          if (sl.life >= sl.maxLife) sl.active = false;
+        }
+      }
+
+      updateEnemies(dt) {
+        const p = this.player;
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          if (e.dead) continue;
+
+          if (e.hitFlashTimer > 0) e.hitFlashTimer -= dt;
+          if (e.alertDisplayTimer > 0) e.alertDisplayTimer -= dt;
+          if (e.attackCooldown > 0) e.attackCooldown -= dt;
+
+          const dx = (p.x + p.width / 2) - (e.x + e.width / 2);
+          const dy = (p.y + p.height / 2) - (e.y + e.height / 2);
+          const absDx = Math.abs(dx);
+          const absDy = Math.abs(dy);
+
+          const sightRange = e.type === 'SPEAR' ? 320 : 265;
+          const attackRange = e.type === 'SPEAR' ? 78 : 48;
+
+          if (e.state === 'STUNNED') {
+            e.stateTimer -= dt;
+            e.vx *= 0.88;
+            if (e.stateTimer <= 0) {
+              e.state = 'CHARGE';
+            }
+          } else if (e.state === 'PATROL') {
+            const patrolSpeed = 75 * diff.enemySpeedMult;
+            e.vx = e.dir * patrolSpeed;
+            if (e.x <= e.minX) { e.x = e.minX; e.dir = 1; }
+            if (e.x >= e.maxX) { e.x = e.maxX; e.dir = -1; }
+
+            // Line-of-sight detection
+            const facingPlayer = Math.sign(dx) === e.dir || absDx < 90;
+            if (absDx < sightRange && absDy < 85 && facingPlayer) {
+              e.state = 'ALERT';
+              e.stateTimer = 0.25;
+              e.alertDisplayTimer = 0.65;
+              e.dir = Math.sign(dx) || 1;
+              e.vx = 0;
+              this.sound.playAlert();
+            }
+          } else if (e.state === 'ALERT') {
+            e.vx = 0;
+            e.stateTimer -= dt;
+            if (e.stateTimer <= 0) {
+              e.state = 'CHARGE';
+            }
+          } else if (e.state === 'CHARGE') {
+            if (absDx > sightRange * 1.35 || absDy > 120) {
+              e.state = 'PATROL';
+            } else {
+              e.dir = Math.sign(dx) || 1;
+              const chargeSpeed = (e.type === 'SPEAR' ? 145 : 175) * diff.enemySpeedMult;
+              e.vx = e.dir * chargeSpeed;
+
+              // Clamp within platform patrol bounds so guards don't walk off cliffs
+              if (e.x < e.minX && e.vx < 0) e.vx = 0;
+              if (e.x > e.maxX && e.vx > 0) e.vx = 0;
+
+              if (absDx <= attackRange && absDy < 54 && e.attackCooldown <= 0) {
+                e.state = 'ATTACK';
+                e.stateTimer = 0.28;
+                e.attackCooldown = e.type === 'SPEAR' ? 1.05 : 0.85;
+                e.vx = e.dir * 90;
+              }
+            }
+          } else if (e.state === 'ATTACK') {
+            e.stateTimer -= dt;
+            if (e.stateTimer <= 0.12 && e.stateTimer + dt > 0.12) {
+              // Strike frame
+              if (absDx <= attackRange + 14 && absDy < 54) {
+                this.damagePlayer(e.type === 'SPEAR' ? 24 : 18, e.dir, e.type === 'SPEAR' ? 'SPEAR IMPALE' : 'KATANA HIT');
+              }
+            }
+            if (e.stateTimer <= 0) {
+              e.state = 'CHARGE';
+            }
+          }
+
+          e.x += e.vx * dt;
+          e.x = Math.max(e.minX - 15, Math.min(e.maxX + 15, e.x));
+        }
+      }
+
+      updateHazardsAndOrbs(dt) {
+        const p = this.player;
+
+        // Spikes
+        for (let i = 0; i < this.spikes.length; i++) {
+          const sp = this.spikes[i];
+          if (this.rectOverlap(p.x + 4, p.y + 6, p.width - 8, p.height - 6, sp.x + 4, sp.y - 18, sp.width - 8, 18)) {
+            this.damagePlayer(32, -p.dir, 'SPIKE HAZARD');
+          }
+        }
+
+        // Rotating Saws
+        for (let i = 0; i < this.saws.length; i++) {
+          const s = this.saws[i];
+          s.t += s.speed * dt;
+          s.angle += 10 * dt;
+          const factor = (Math.sin(s.t) + 1) * 0.5;
+          s.x = s.x1 + (s.x2 - s.x1) * factor;
+          s.y = s.y1 + (s.y2 - s.y1) * factor;
+
+          // Circle-rect check
+          const cx = Math.max(p.x, Math.min(s.x, p.x + p.width));
+          const cy = Math.max(p.y, Math.min(s.y, p.y + p.height));
+          const distSq = (s.x - cx) ** 2 + (s.y - cy) ** 2;
+          if (distSq < (s.radius - 3) ** 2) {
+            this.damagePlayer(28, p.x < s.x ? -1 : 1, 'SAW BLADE');
+          }
+        }
+
+        // Spirit Orbs
+        const diff = DIFFICULTIES[this.selectedDifficulty];
+        for (let i = 0; i < this.orbs.length; i++) {
+          const orb = this.orbs[i];
+          if (orb.collected) continue;
+          const dx = (p.x + p.width / 2) - orb.x;
+          const dy = (p.y + p.height / 2) - orb.y;
+          if (dx * dx + dy * dy < (orb.radius + 20) ** 2) {
+            orb.collected = true;
+            const bonus = Math.round(100 * diff.scoreMult);
+            this.score += bonus;
+            p.hp = Math.min(p.maxHp, p.hp + 8);
+            this.sound.playOrb();
+            this.spawnParticles(orb.x, orb.y, 12, '#f59e0b', 160, 3.2, 100);
+            this.recordHitValidity('VALID', 'SPIRIT ORB', orb.x, orb.y - 12, `+${bonus} PTS`);
+          }
+        }
+      }
+
+      updatePools(dt) {
+        // Particles
+        for (let i = 0; i < this.particlePool.pool.length; i++) {
+          const pt = this.particlePool.pool[i];
+          if (!pt.active) continue;
+          pt.x += pt.vx * dt;
+          pt.y += pt.vy * dt;
+          pt.vy += pt.gravity * dt;
+          pt.life += dt;
+          if (pt.life >= pt.maxLife) pt.active = false;
+        }
+
+        // Dash Afterimages
+        for (let i = 0; i < this.afterimagePool.pool.length; i++) {
+          const af = this.afterimagePool.pool[i];
+          if (!af.active) continue;
+          af.life += dt;
+          if (af.life >= af.maxLife) af.active = false;
+        }
+
+        // Floating Texts
+        for (let i = 0; i < this.floatingTextPool.pool.length; i++) {
+          const ft = this.floatingTextPool.pool[i];
+          if (!ft.active) continue;
+          ft.y += ft.vy * dt;
+          ft.vy *= 0.94;
+          ft.life += dt;
+          if (ft.life >= ft.maxLife) ft.active = false;
+        }
+      }
+
+      updateCamera(dt) {
+        const targetX = this.player.x + this.player.dir * 110 - this.logicalWidth * 0.36;
+        const clampedX = Math.max(0, Math.min(this.levelWidth - this.logicalWidth, targetX));
+        this.camera.x += (clampedX - this.camera.x) * Math.min(1, dt * 7.5);
+        this.camera.y = 0;
+      }
+
+      rectOverlap(ax, ay, aw, ah, bx, by, bw, bh) {
+        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+      }
+
+      // --- 11. SCOREBOARD & TACTICAL HUD DOM UPDATES ---
+      updateScoreboardDOM() {
+        const p = this.player;
+
+        // Health & Scenario
+        const hpPct = Math.max(0, Math.min(100, (p.hp / p.maxHp) * 100));
+        document.getElementById('hud-hp-bar').style.width = `${hpPct}%`;
+        document.getElementById('hud-hp-text').textContent = `${Math.ceil(p.hp)} / ${p.maxHp}`;
+        document.getElementById('hud-Scenario-badge').textContent = this.selectedScenario;
+
+        // Score, Kills, Difficulty, Time
+        document.getElementById('hud-score').textContent = String(this.score).padStart(5, '0');
+        document.getElementById('hud-kills').textContent = `${this.kills} / ${this.totalEnemies}`;
+        document.getElementById('hud-difficulty').textContent = this.selectedDifficulty;
+        document.getElementById('hud-time').textContent = this.formatTime(this.elapsedTime);
+
+        // Hit Validity & Accuracy
+        const acc = this.totalAttackAttempts > 0
+          ? Math.min(100, Math.round((this.validHitCount / this.totalAttackAttempts) * 100))
+          : 100;
+        document.getElementById('hud-accuracy').textContent = `ACC: ${acc}%`;
+        document.getElementById('hud-valid-count').textContent = String(this.validHitCount);
+
+        const mult = Math.min(5.0, 1 + Math.floor(this.comboCount / 2) * 0.5);
+        document.getElementById('hud-combo-display').textContent = `${this.comboCount} HIT (x${mult.toFixed(1)})`;
+
+        const validityEl = document.getElementById('hud-hit-validity-badge');
+        const iconEl = document.getElementById('hud-hit-icon');
+        validityEl.textContent = this.lastHitValidityStatus;
+
+        if (this.lastHitValidityType === 'CRIT') {
+          validityEl.className = 'font-mono-tech text-xs sm:text-sm font-extrabold text-amber-400 tracking-wide';
+          iconEl.textContent = '★';
+          iconEl.className = 'w-7 h-7 rounded-md bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-300 font-mono-tech text-xs font-black';
+        } else if (this.lastHitValidityType === 'WHIFF') {
+          validityEl.className = 'font-mono-tech text-xs sm:text-sm font-extrabold text-slate-400 tracking-wide';
+          iconEl.textContent = '×';
+          iconEl.className = 'w-7 h-7 rounded-md bg-slate-700/40 border border-slate-500/40 flex items-center justify-center text-slate-300 font-mono-tech text-xs font-black';
+        } else if (this.lastHitValidityType === 'HURT') {
+          validityEl.className = 'font-mono-tech text-xs sm:text-sm font-extrabold text-red-400 tracking-wide';
+          iconEl.textContent = '!';
+          iconEl.className = 'w-7 h-7 rounded-md bg-red-500/20 border border-red-500/50 flex items-center justify-center text-red-300 font-mono-tech text-xs font-black';
+        } else {
+          validityEl.className = 'font-mono-tech text-xs sm:text-sm font-extrabold text-emerald-400 tracking-wide';
+          iconEl.textContent = '✓';
+          iconEl.className = 'w-7 h-7 rounded-md bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 font-mono-tech text-xs font-black';
+        }
+
+        // Shrine Distance Progress
+        const progressPct = Math.max(0, Math.min(100, Math.round((p.x / this.shrine.x) * 100)));
+        document.getElementById('hud-progress-bar').style.width = `${progressPct}%`;
+        document.getElementById('hud-progress-text').textContent = `${progressPct}%`;
+
+        // Ability Readiness Indicators (READY vs Cooldown Progress)
+        // 1. Dash (1.5s)
+        const dashReady = p.dashCooldown <= 0;
+        const dashPct = dashReady ? 100 : Math.round(((p.dashMaxCooldown - p.dashCooldown) / p.dashMaxCooldown) * 100);
+        const dashStatusEl = document.getElementById('hud-dash-status');
+        document.getElementById('hud-dash-bar').style.width = `${dashPct}%`;
+        if (dashReady) {
+          dashStatusEl.textContent = 'READY';
+          dashStatusEl.className = 'badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40';
+          document.getElementById('touch-dash-cd').textContent = 'READY';
+        } else {
+          dashStatusEl.textContent = `${p.dashCooldown.toFixed(1)}s`;
+          dashStatusEl.className = 'font-mono-tech text-[9px] font-bold px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30';
+          document.getElementById('touch-dash-cd').textContent = `${p.dashCooldown.toFixed(1)}s`;
+        }
+
+        // 2. Shuriken
+        const starReady = p.shurikenCooldown <= 0;
+        const starPct = starReady ? 100 : Math.round(((p.shurikenMaxCooldown - p.shurikenCooldown) / p.shurikenMaxCooldown) * 100);
+        const starStatusEl = document.getElementById('hud-shuriken-status');
+        document.getElementById('hud-shuriken-bar').style.width = `${starPct}%`;
+        if (starReady) {
+          starStatusEl.textContent = 'READY';
+          starStatusEl.className = 'badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40';
+          document.getElementById('touch-star-cd').textContent = 'READY';
+        } else {
+          starStatusEl.textContent = `${p.shurikenCooldown.toFixed(1)}s`;
+          starStatusEl.className = 'font-mono-tech text-[9px] font-bold px-1 rounded bg-amber-500/20 text-amber-300 border border-amber-400/30';
+          document.getElementById('touch-star-cd').textContent = `${p.shurikenCooldown.toFixed(1)}s`;
+        }
+
+        // 3. Blade Combo Readiness
+        const bladeReady = p.attackCooldown <= 0;
+        const bladeStatusEl = document.getElementById('hud-blade-status');
+        if (p.comboStep > 0 && p.comboWindowTimer > 0) {
+          bladeStatusEl.textContent = `HIT ${p.comboStep}/3`;
+          bladeStatusEl.className = 'font-mono-tech text-[9px] font-extrabold px-1 rounded bg-rose-500/25 text-rose-300 border border-rose-400/40';
+          document.getElementById('hud-blade-bar').style.width = `${(p.comboStep / 3) * 100}%`;
+        } else if (bladeReady) {
+          bladeStatusEl.textContent = 'READY';
+          bladeStatusEl.className = 'badge-ready font-mono-tech text-[9px] font-extrabold px-1 rounded bg-emerald-500/25 text-emerald-300 border border-emerald-400/40';
+          document.getElementById('hud-blade-bar').style.width = '100%';
+        } else {
+          bladeStatusEl.textContent = 'WAIT';
+          document.getElementById('hud-blade-bar').style.width = '40%';
+        }
+
+        // Overall Systems Pill
+        const allReadyPill = document.getElementById('hud-all-ready-pill');
+        if (dashReady && starReady && bladeReady) {
+          allReadyPill.textContent = 'ALL READY';
+          allReadyPill.className = 'font-mono-tech text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        } else {
+          allReadyPill.textContent = 'RECHARGING';
+          allReadyPill.className = 'font-mono-tech text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40';
+        }
+      }
+
+      // --- 12. VECTOR SILHOUETTE RENDERING ENGINE ---
+      render() {
+        const ctx = this.ctx;
+        const w = this.canvas.width;
+        const h = this.canvas.height;
+
+        ctx.save();
+        // Scale logical coordinates to physical Retina pixels
+        const scaleX = w / this.logicalWidth;
+        const scaleY = h / this.logicalHeight;
+        ctx.scale(scaleX, scaleY);
+
+        const theme = SCENARIOS[this.selectedScenario] || SCENARIOS.DAWN;
+
+        // 1. Atmospheric Sky Gradient
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, this.logicalHeight);
+        skyGrad.addColorStop(0, theme.skyStops[0]);
+        skyGrad.addColorStop(0.38, theme.skyStops[1]);
+        skyGrad.addColorStop(0.75, theme.skyStops[2]);
+        skyGrad.addColorStop(1, theme.skyStops[3]);
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, this.logicalWidth, this.logicalHeight);
+
+        // 2. Glowing Celestial Body (Sun / Moon)
+        const sunX = this.logicalWidth * 0.72 - (this.camera.x * 0.03);
+        const sunY = this.logicalHeight * theme.celestialYRatio;
+        const sunGlow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 165);
+        sunGlow.addColorStop(0, theme.celestialColor);
+        sunGlow.addColorStop(0.35, theme.celestialGlow);
+        sunGlow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sunGlow;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 165, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = theme.celestialColor;
+        ctx.beginPath();
+        ctx.arc(sunX, sunY, 46, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Parallax Distant Mountains & Pagodas
+        this.renderParallaxMountains(ctx, theme);
+        this.renderParallaxBamboo(ctx, theme);
+
+        // Apply Camera + Screen Shake Transform for World Space
+        ctx.save();
+        let shakeX = 0;
+        let shakeY = 0;
+        if (this.shakeTimer > 0) {
+          shakeX = (Math.random() * 2 - 1) * this.shakeIntensity;
+          shakeY = (Math.random() * 2 - 1) * this.shakeIntensity;
+        }
+        ctx.translate(-this.camera.x + shakeX, -this.camera.y + shakeY);
+
+        // 4. Volumetric Fog Bands
+        this.renderFog(ctx, theme);
+
+        // 5. Stage-Clear Torii Shrine Portal
+        this.renderShrine(ctx, theme);
+
+        // 6. Collectible Spirit Orbs
+        this.renderOrbs(ctx);
+
+        // 7. Spikes & Rotating Saws
+        this.renderHazards(ctx, theme);
+
+        // 8. Platforms & Bamboo Bridges
+        this.renderPlatforms(ctx, theme);
+
+        // 9. Dash Afterimages
+        this.renderAfterimages(ctx);
+
+        // 10. Enemies (Guards & Spearmen)
+        this.renderEnemies(ctx);
+
+        // 11. Player Character (Ninja Arashi Silhouette)
+        this.renderPlayer(ctx);
+
+        // 12. Sword Slash Trails & Shurikens
+        this.renderSlashes(ctx);
+        this.renderShurikens(ctx);
+
+        // 13. Particles & Floating Combat / Hit Validity Text
+        this.renderParticles(ctx);
+        this.renderFloatingTexts(ctx);
+
+        ctx.restore(); // End Camera Space
+        ctx.restore(); // End DPI Scale
+      }
+
+      renderParallaxMountains(ctx, theme) {
+        // Far Layer (0.15 parallax)
+        ctx.fillStyle = theme.mountainFar;
+        for (let i = 0; i < this.bgMountains.length; i++) {
+          const m = this.bgMountains[i];
+          if (m.layer !== 0) continue;
+          const screenX = m.x - this.camera.x * 0.14;
+          if (screenX + m.width < -100 || screenX > this.logicalWidth + 100) continue;
+          ctx.beginPath();
+          ctx.moveTo(screenX, this.logicalHeight);
+          ctx.lineTo(screenX + m.width * 0.48, this.logicalHeight - m.height);
+          ctx.lineTo(screenX + m.width, this.logicalHeight);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Mid Layer (0.28 parallax) + Distant Pagoda Silhouettes
+        ctx.fillStyle = theme.mountainMid;
+        for (let i = 0; i < this.bgMountains.length; i++) {
+          const m = this.bgMountains[i];
+          if (m.layer !== 1) continue;
+          const screenX = m.x - this.camera.x * 0.28;
+          if (screenX + m.width < -100 || screenX > this.logicalWidth + 100) continue;
+          ctx.beginPath();
+          ctx.moveTo(screenX, this.logicalHeight);
+          ctx.lineTo(screenX + m.width * 0.52, this.logicalHeight - m.height * 0.85);
+          ctx.lineTo(screenX + m.width, this.logicalHeight);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Traditional Japanese Pagodas (0.35 parallax)
+        for (let i = 0; i < this.bgPagodas.length; i++) {
+          const pg = this.bgPagodas[i];
+          const px = pg.x - this.camera.x * 0.35;
+          if (px < -200 || px > this.logicalWidth + 200) continue;
+          this.drawPagodaSilhouette(ctx, px, pg.y, pg.tiers, pg.scale, theme.mountainMid);
+        }
+      }
+
+      drawPagodaSilhouette(ctx, x, baseY, tiers, scale, color) {
+        ctx.save();
+        ctx.translate(x, baseY);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = color;
+
+        // Base pillar
+        ctx.fillRect(-26, 0, 52, 260);
+
+        for (let t = 0; t < tiers; t++) {
+          const y = -t * 36;
+          const roofW = 68 - t * 8;
+          ctx.beginPath();
+          ctx.moveTo(-roofW, y);
+          ctx.quadraticCurveTo(0, y - 18, roofW, y);
+          ctx.lineTo(roofW - 14, y - 16);
+          ctx.lineTo(-roofW + 14, y - 16);
+          ctx.closePath();
+          ctx.fill();
+          ctx.fillRect(-(roofW - 22), y - 34, (roofW - 22) * 2, 20);
+        }
+
+        // Spire
+        ctx.fillRect(-2.5, -tiers * 36 - 35, 5, 38);
+        ctx.restore();
+      }
+
+      renderParallaxBamboo(ctx, theme) {
+        ctx.strokeStyle = theme.bambooColor;
+        for (let i = 0; i < this.bgBamboos.length; i++) {
+          const b = this.bgBamboos[i];
+          const bx = b.x - this.camera.x * 0.52;
+          if (bx < -50 || bx > this.logicalWidth + 50) continue;
+
+          ctx.lineWidth = b.width;
+          ctx.beginPath();
+          ctx.moveTo(bx, this.logicalHeight);
+          ctx.lineTo(bx + b.lean * 500, 40);
+          ctx.stroke();
+
+          // Bamboo nodes
+          ctx.lineWidth = b.width + 3;
+          for (let s = 1; s < b.segments; s++) {
+            const ny = this.logicalHeight - s * 82;
+            const nx = bx + b.lean * (this.logicalHeight - ny);
+            ctx.beginPath();
+            ctx.moveTo(nx - b.width * 0.7, ny);
+            ctx.lineTo(nx + b.width * 0.7, ny);
+            ctx.stroke();
+          }
+        }
+      }
+
+      renderFog(ctx, theme) {
+        ctx.fillStyle = theme.fogColor;
+        for (let i = 0; i < this.fogClouds.length; i++) {
+          const f = this.fogClouds[i];
+          ctx.beginPath();
+          ctx.ellipse(f.x + f.width / 2, f.y, f.width / 2, f.height / 2, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      renderPlatforms(ctx, theme) {
+        for (let i = 0; i < this.platforms.length; i++) {
+          const plat = this.platforms[i];
+          if (plat.x + plat.width < this.camera.x - 80 || plat.x > this.camera.x + this.logicalWidth + 80) continue;
+
+          // Deep Silhouette Body
+          ctx.fillStyle = theme.platformFill;
+          ctx.beginPath();
+          ctx.roundRect(plat.x, plat.y, plat.width, plat.height, 4);
+          ctx.fill();
+
+          // Top Atmospheric Rim Highlight
+          ctx.fillStyle = theme.platformRim;
+          ctx.globalAlpha = 0.65;
+          ctx.fillRect(plat.x + 2, plat.y, plat.width - 4, 3);
+          ctx.globalAlpha = 1;
+
+          // Grass blades / stone notches on non-wall platforms
+          if (!plat.isWall) {
+            ctx.fillStyle = theme.platformFill;
+            for (let gx = plat.x + 14; gx < plat.x + plat.width - 14; gx += 28) {
+              ctx.beginPath();
+              ctx.moveTo(gx, plat.y);
+              ctx.lineTo(gx + 4, plat.y - 7);
+              ctx.lineTo(gx + 8, plat.y);
+              ctx.fill();
+            }
+          }
+        }
+      }
+
+      renderHazards(ctx, theme) {
+        // Deadly Ground Spikes
+        for (let i = 0; i < this.spikes.length; i++) {
+          const sp = this.spikes[i];
+          if (sp.x + sp.width < this.camera.x - 50 || sp.x > this.camera.x + this.logicalWidth + 50) continue;
+
+          const toothW = 14;
+          const count = Math.floor(sp.width / toothW);
+          ctx.fillStyle = '#090d16';
+          ctx.strokeStyle = '#ef4444';
+          ctx.lineWidth = 1.5;
+
+          for (let k = 0; k < count; k++) {
+            const sx = sp.x + k * toothW;
+            ctx.beginPath();
+            ctx.moveTo(sx, sp.y);
+            ctx.lineTo(sx + toothW * 0.5, sp.y - 22);
+            ctx.lineTo(sx + toothW, sp.y);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+
+        // Moving Saw Blades
+        for (let i = 0; i < this.saws.length; i++) {
+          const s = this.saws[i];
+          if (s.x + s.radius < this.camera.x - 60 || s.x - s.radius > this.camera.x + this.logicalWidth + 60) continue;
+
+          // Track line
+          ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(s.x1, s.y1);
+          ctx.lineTo(s.x2, s.y2);
+          ctx.stroke();
+
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.angle);
+
+          // Saw Teeth Silhouette
+          const teeth = 12;
+          ctx.fillStyle = '#111827';
+          ctx.strokeStyle = '#f87171';
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          for (let t = 0; t < teeth * 2; t++) {
+            const r = t % 2 === 0 ? s.radius : s.radius * 0.72;
+            const ang = (t * Math.PI) / teeth;
+            const tx = Math.cos(ang) * r;
+            const ty = Math.sin(ang) * r;
+            if (t === 0) ctx.moveTo(tx, ty);
+            else ctx.lineTo(tx, ty);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          // Glowing Crimson Core
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(0, 0, s.radius * 0.28, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      renderOrbs(ctx) {
+        for (let i = 0; i < this.orbs.length; i++) {
+          const orb = this.orbs[i];
+          if (orb.collected) continue;
+          const by = orb.y + Math.sin(this.elapsedTime * 4 + orb.bobOffset) * 5;
+
+          const grad = ctx.createRadialGradient(orb.x, by, 2, orb.x, by, 18);
+          grad.addColorStop(0, '#fef08a');
+          grad.addColorStop(0.5, '#f59e0b');
+          grad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(orb.x, by, 18, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(orb.x, by, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      renderShrine(ctx, theme) {
+        const sh = this.shrine;
+        const cx = sh.x + sh.width / 2;
+        const cy = sh.y + sh.height / 2 + 15;
+
+        // Swirling Portal Aura
+        const portalGrad = ctx.createRadialGradient(cx, cy, 10, cx, cy, 85);
+        portalGrad.addColorStop(0, '#ffffff');
+        portalGrad.addColorStop(0.35, theme.shrineGlow);
+        portalGrad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = portalGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 85, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Traditional Torii Gate Silhouette
+        ctx.fillStyle = '#070a10';
+        ctx.strokeStyle = theme.shrineGlow;
+        ctx.lineWidth = 2;
+
+        // Left & Right Pillars
+        ctx.fillRect(sh.x + 18, sh.y + 20, 14, sh.height - 20);
+        ctx.fillRect(sh.x + sh.width - 32, sh.y + 20, 14, sh.height - 20);
+
+        // Top Curved Kasagi Beam
+        ctx.beginPath();
+        ctx.moveTo(sh.x - 10, sh.y + 18);
+        ctx.quadraticCurveTo(cx, sh.y + 2, sh.x + sh.width + 10, sh.y + 18);
+        ctx.lineTo(sh.x + sh.width + 4, sh.y + 32);
+        ctx.quadraticCurveTo(cx, sh.y + 18, sh.x - 4, sh.y + 32);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Secondary Nuki Crossbeam
+        ctx.fillRect(sh.x + 6, sh.y + 48, sh.width - 12, 10);
+      }
+
+      renderAfterimages(ctx) {
+        for (let i = 0; i < this.afterimagePool.pool.length; i++) {
+          const af = this.afterimagePool.pool[i];
+          if (!af.active) continue;
+          const alpha = (1 - af.life / af.maxLife) * 0.45;
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = '#38bdf8';
+          ctx.beginPath();
+          ctx.roundRect(af.x, af.y, 30, 54, 8);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      renderPlayer(ctx) {
+        const p = this.player;
+
+        // Blink during invulnerability frames
+        if (p.invulnTimer > 0 && Math.floor(p.invulnTimer * 20) % 2 === 0 && p.dashTimer <= 0) {
+          ctx.globalAlpha = 0.45;
+        }
+
+        // 1. Flowing Crimson Ninja Scarf
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 6.5;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        for (let i = 0; i < p.scarfNodes.length; i++) {
+          const node = p.scarfNodes[i];
+          if (i === 0) ctx.moveTo(node.x, node.y);
+          else ctx.lineTo(node.x, node.y);
+        }
+        ctx.stroke();
+
+        ctx.save();
+        const cx = p.x + p.width / 2;
+        const cy = p.y + p.height / 2;
+        ctx.translate(cx, cy);
+        ctx.scale(p.dir, 1);
+
+        // Slight forward lean when running or dashing
+        const lean = p.dashTimer > 0 ? 0.32 : (Math.abs(p.vx) > 40 ? 0.14 : 0);
+        ctx.rotate(lean);
+
+        // 2. Sheathed Katana on Back
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-16, -24);
+        ctx.lineTo(12, 8);
+        ctx.stroke();
+
+        // 3. Ninja Silhouette Body, Straw Hat / Cowl & Limbs
+        ctx.fillStyle = '#05070c';
+        ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+        ctx.lineWidth = 1.2;
+
+        // Head
+        ctx.beginPath();
+        ctx.arc(0, -16, 10.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Iconic Conical Ninja/Ronin Straw Hat (Kasa)
+        ctx.fillStyle = '#070a12';
+        ctx.beginPath();
+        ctx.moveTo(-20, -19);
+        ctx.quadraticCurveTo(0, -33, 20, -19);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Torso
+        ctx.beginPath();
+        ctx.roundRect(-9, -6, 18, 22, 5);
+        ctx.fill();
+
+        // Animated Legs
+        const stride = p.onGround && Math.abs(p.vx) > 20 ? Math.sin(p.runAnimTime) * 9 : 4;
+        ctx.lineWidth = 5.5;
+        ctx.strokeStyle = '#05070c';
+        ctx.beginPath();
+        ctx.moveTo(-3, 14);
+        ctx.lineTo(-4 - stride, 26);
+        ctx.moveTo(3, 14);
+        ctx.lineTo(4 + stride, 26);
+        ctx.stroke();
+
+        // Glowing Ninja Eye Slit
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowColor = '#38bdf8';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.moveTo(3, -17);
+        ctx.lineTo(9, -15);
+        ctx.lineTo(4, -13);
+        ctx.closePath();
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.restore();
+        ctx.globalAlpha = 1;
+      }
+
+      renderEnemies(ctx) {
+        for (let i = 0; i < this.enemies.length; i++) {
+          const e = this.enemies[i];
+          if (e.dead) continue;
+          if (e.x + e.width < this.camera.x - 80 || e.x > this.camera.x + this.logicalWidth + 80) continue;
+
+          const cx = e.x + e.width / 2;
+          const cy = e.y + e.height / 2;
+
+          // Floating Health Bar above Enemy
+          const barW = 40;
+          const barH = 5;
+          const bx = cx - barW / 2;
+          const by = e.y - 16;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+          ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(bx, by, barW * Math.max(0, e.hp / e.maxHp), barH);
+
+          // Alert Exclamation Indicator (!)
+          if (e.alertDisplayTimer > 0 || e.state === 'ALERT') {
+            ctx.fillStyle = '#f59e0b';
+            ctx.font = '900 18px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('!', cx, e.y - 24);
+          }
+
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.scale(e.dir, 1);
+
+          const bodyColor = e.hitFlashTimer > 0 ? '#fca5a5' : '#090c14';
+          ctx.fillStyle = bodyColor;
+          ctx.strokeStyle = e.type === 'SPEAR' ? '#f59e0b' : '#ef4444';
+          ctx.lineWidth = 1.4;
+
+          // Samurai Helmet / Kabuto Silhouette
+          ctx.beginPath();
+          ctx.arc(0, -16, 10, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          // Torso Armor
+          ctx.beginPath();
+          ctx.roundRect(-11, -6, 22, 24, 4);
+          ctx.fill();
+          ctx.stroke();
+
+          // Glowing Crimson Enemy Eye
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(3, -18, 6, 3);
+
+          // Weapon Silhouette (Long Spear vs Katana)
+          const thrustOffset = e.state === 'ATTACK' ? 16 : 0;
+          if (e.type === 'SPEAR') {
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(-14, 4);
+            ctx.lineTo(44 + thrustOffset, 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.moveTo(44 + thrustOffset, -2);
+            ctx.lineTo(58 + thrustOffset, 2);
+            ctx.lineTo(44 + thrustOffset, 6);
+            ctx.closePath();
+            ctx.fill();
+          } else {
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 2.8;
+            ctx.beginPath();
+            ctx.moveTo(6, 4);
+            ctx.lineTo(30 + thrustOffset, -10);
+            ctx.stroke();
+          }
+
+          ctx.restore();
+        }
+      }
+
+      renderSlashes(ctx) {
+        for (let i = 0; i < this.slashPool.pool.length; i++) {
+          const sl = this.slashPool.pool[i];
+          if (!sl.active) continue;
+
+          const progress = sl.life / sl.maxLife;
+          const alpha = 1 - progress;
+
+          ctx.save();
+          ctx.translate(sl.x, sl.y);
+          ctx.scale(sl.dir, sl.comboStep === 2 ? -1 : 1);
+          ctx.globalAlpha = alpha;
+
+          const color = sl.comboStep === 3 ? '#f43f5e' : sl.comboStep === 2 ? '#38bdf8' : '#f8fafc';
+          ctx.fillStyle = color;
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 14;
+
+          ctx.beginPath();
+          ctx.arc(0, 0, sl.radius, -Math.PI * 0.45, Math.PI * 0.45, false);
+          ctx.arc(-10, 0, sl.radius * 0.78, Math.PI * 0.45, -Math.PI * 0.45, true);
+          ctx.closePath();
+          ctx.fill();
+
+          ctx.restore();
+        }
+      }
+
+      renderShurikens(ctx) {
+        for (let i = 0; i < this.shurikenPool.pool.length; i++) {
+          const s = this.shurikenPool.pool[i];
+          if (!s.active) continue;
+
+          ctx.save();
+          ctx.translate(s.x, s.y);
+          ctx.rotate(s.angle);
+
+          ctx.fillStyle = '#e2e8f0';
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 1.2;
+
+          ctx.beginPath();
+          for (let k = 0; k < 8; k++) {
+            const r = k % 2 === 0 ? s.radius : s.radius * 0.32;
+            const a = (k * Math.PI) / 4;
+            if (k === 0) ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+            else ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.restore();
+        }
+      }
+
+      renderParticles(ctx) {
+        for (let i = 0; i < this.particlePool.pool.length; i++) {
+          const pt = this.particlePool.pool[i];
+          if (!pt.active) continue;
+          const alpha = 1 - pt.life / pt.maxLife;
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      renderFloatingTexts(ctx) {
+        for (let i = 0; i < this.floatingTextPool.pool.length; i++) {
+          const ft = this.floatingTextPool.pool[i];
+          if (!ft.active) continue;
+
+          const alpha = Math.max(0, 1 - ft.life / ft.maxLife);
+          ctx.save();
+          ctx.globalAlpha = alpha;
+          ctx.translate(ft.x, ft.y);
+          ctx.scale(ft.scale, ft.scale);
+
+          ctx.font = '800 13px "JetBrains Mono", monospace';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = '#000000';
+          ctx.fillText(ft.text, 1, 1);
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, 0, 0);
+
+          if (ft.subtext) {
+            ctx.font = '700 10px "JetBrains Mono", monospace';
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillText(ft.subtext, 0, 13);
+          }
+
+          ctx.restore();
+        }
+      }
+
+      // --- 13. MAIN REQUESTANIMATIONFRAME LOOP ---
+      loop(now) {
+        const rawDt = (now - this.lastFrameTime) / 1000;
+        this.lastFrameTime = now;
+        // Clamp dt to 50ms max so tab-switching never breaks physics
+        const dt = Math.min(Math.max(rawDt, 0.001), 0.05);
+
+        this.update(dt);
+        this.render();
+
+        requestAnimationFrame(this.loop);
+      }
+    }
+
+    // Boot Game on Window Load
+    window.onload = function () {
+      window.arashiGame = new ArashiGame();
+    };
+  </script>
+</body>
+</html>
